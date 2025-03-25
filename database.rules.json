@@ -1,13 +1,17 @@
 {
   "rules": {
+    ".read": true,
     "content": {
       ".read": true,
-      ".write": "auth != null && auth.token.admin === true"
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
     },
     "users": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
-        ".write": "auth != null && (auth.uid === $uid || auth.token.admin === true)",
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "isAdmin": {
+          ".write": false
+        },
         "watchlist": {
           ".read": "auth != null && auth.uid === $uid",
           ".write": "auth != null && auth.uid === $uid"
@@ -18,9 +22,17 @@
         }
       }
     },
-    "admin": {
-      ".read": "auth != null && auth.token.admin === true",
-      ".write": "auth != null && auth.token.admin === true"
+    "watchlist": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "progress": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
     }
   }
 } 

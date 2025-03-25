@@ -11,6 +11,9 @@ import {
   Alert,
 } from '@mui/material';
 import { useAuth } from '../hooks/useAuth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { ref, set, get } from 'firebase/database';
+import { auth, database } from '../config/firebase';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -29,22 +32,36 @@ const Login = () => {
     setLoading(true);
 
     try {
-      if (isSignUp) {
-        await signUp(formData.email, formData.password);
-      } else {
-        await signIn(formData.email, formData.password);
+      const userCredential = isSignUp
+        ? await createUserWithEmailAndPassword(auth, formData.email, formData.password)
+        : await signInWithEmailAndPassword(auth, formData.email, formData.password);
+
+      // Après la création du compte ou la connexion
+      const { user } = userCredential;
+
+      // Vérifie s'il y a déjà des utilisateurs dans la base
+      const usersRef = ref(database, 'users');
+      const usersSnapshot = await get(usersRef);
+
+      // Si c'est le premier utilisateur, on le définit comme admin
+      if (!usersSnapshot.exists()) {
+        await set(ref(database, `users/${user.uid}`), {
+          email: user.email,
+          isAdmin: true,
+          createdAt: new Date().toISOString()
+        });
+      } else if (isSignUp) {
+        // Si c'est un nouvel utilisateur mais pas le premier
+        await set(ref(database, `users/${user.uid}`), {
+          email: user.email,
+          isAdmin: false,
+          createdAt: new Date().toISOString()
+        });
       }
+
       navigate('/');
-    } catch (error: any) {
-      setError(
-        error.code === 'auth/email-already-in-use'
-          ? 'Cet email est déjà utilisé'
-          : error.code === 'auth/invalid-email'
-          ? 'Email invalide'
-          : error.code === 'auth/weak-password'
-          ? 'Le mot de passe doit contenir au moins 6 caractères'
-          : 'Une erreur est survenue lors de la connexion'
-      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
     } finally {
       setLoading(false);
     }
