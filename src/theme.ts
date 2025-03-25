@@ -1,60 +1,50 @@
-import { createTheme, Theme } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles';
 
-export const theme = (mode: 'light' | 'dark'): Theme =>
-  createTheme({
-    palette: {
-      mode,
-      primary: {
-        main: '#1976d2',
-      },
-      secondary: {
-        main: '#dc004e',
-      },
-      background: {
-        default: mode === 'light' ? '#f5f5f5' : '#121212',
-      },
+export const theme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#1976d2',
     },
-    typography: {
-      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-      h1: {
-        fontSize: '2.5rem',
-        fontWeight: 500,
-      },
-      h2: {
-        fontSize: '2rem',
-        fontWeight: 500,
-      },
-      h3: {
-        fontSize: '1.75rem',
-        fontWeight: 500,
-      },
-      h4: {
-        fontSize: '1.5rem',
-        fontWeight: 500,
-      },
-      h5: {
-        fontSize: '1.25rem',
-        fontWeight: 500,
-      },
-      h6: {
-        fontSize: '1rem',
-        fontWeight: 500,
-      },
+    secondary: {
+      main: '#dc004e',
     },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: 'none',
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          scrollbarColor: "#6b6b6b #2b2b2b",
+          "&::-webkit-scrollbar, & *::-webkit-scrollbar": {
+            backgroundColor: "#2b2b2b",
           },
-        },
-      },
-      MuiCard: {
-        styleOverrides: {
-          root: {
+          "&::-webkit-scrollbar-thumb, & *::-webkit-scrollbar-thumb": {
             borderRadius: 8,
+            backgroundColor: "#6b6b6b",
+            minHeight: 24,
+            border: "3px solid #2b2b2b",
+          },
+          "&::-webkit-scrollbar-thumb:focus, & *::-webkit-scrollbar-thumb:focus": {
+            backgroundColor: "#959595",
+          },
+          "&::-webkit-scrollbar-thumb:active, & *::-webkit-scrollbar-thumb:active": {
+            backgroundColor: "#959595",
+          },
+          "&::-webkit-scrollbar-thumb:hover, & *::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: "#959595",
+          },
+          "&::-webkit-scrollbar-corner, & *::-webkit-scrollbar-corner": {
+            backgroundColor: "#2b2b2b",
           },
         },
       },
     },
-  }); 
+  },
+}); 
