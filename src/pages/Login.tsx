@@ -10,14 +10,12 @@ import {
   Link,
   Alert,
 } from '@mui/material';
-import { useAuth } from '../hooks/useAuth';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { ref, set, get } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
