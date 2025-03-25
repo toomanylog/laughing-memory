@@ -1,26 +1,157 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 21, 21, 21;
+  --background-end-rgb: 10, 10, 10;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      rgb(var(--background-start-rgb)),
+      rgb(var(--background-end-rgb))
+    )
+    no-repeat;
+  min-height: 100vh;
+}
+
+@layer components {
+  /* Cards & Containers */
+  .content-card {
+    @apply overflow-hidden rounded-card bg-dark-card shadow-card transition-all duration-300 hover:shadow-card-hover;
+  }
+  
+  .media-card {
+    @apply relative overflow-hidden rounded-card shadow-card transition-all duration-300;
+  }
+  
+  .media-card:hover {
+    @apply transform shadow-card-hover scale-105 z-10;
+  }
+  
+  .media-card:hover .media-overlay {
+    @apply opacity-100;
+  }
+  
+  .media-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-black/90 to-transparent opacity-0 transition-opacity duration-300 flex flex-col justify-end p-3;
+  }
+  
+  .section-container {
+    @apply container mx-auto px-4 py-6;
+  }
+  
+  .section-title {
+    @apply text-xl md:text-2xl font-bold mb-4 flex items-center;
+  }
+  
+  .section-title::before {
+    content: '';
+    @apply block w-1 h-6 bg-primary mr-2 rounded;
+  }
+  
+  /* Buttons */
+  .btn {
+    @apply rounded-md px-4 py-2 font-medium transition-all duration-300;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary/80 hover:scale-105;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-secondary text-white hover:bg-secondary/80 hover:scale-105;
+  }
+  
+  .btn-outline {
+    @apply btn border border-gray-600 text-white hover:bg-gray-700;
+  }
+  
+  .btn-primary-sm {
+    @apply rounded-md px-3 py-1 text-sm font-medium bg-primary text-white hover:bg-primary/80 transition-all duration-300;
+  }
+  
+  .btn-outline-sm {
+    @apply rounded-md text-sm font-medium border border-gray-600 text-white hover:bg-gray-700 transition-all duration-300;
+  }
+  
+  .btn-icon {
+    @apply flex items-center justify-center gap-2;
+  }
+  
+  /* Navigation */
+  .nav-link {
+    @apply text-light/80 hover:text-white transition-colors relative;
+  }
+  
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300;
+  }
+  
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+  
+  .nav-link.active {
+    @apply text-white font-medium;
+  }
+  
+  .nav-link.active::after {
+    @apply w-full;
+  }
+  
+  /* Form Elements */
+  .form-input {
+    @apply w-full px-3 py-2 bg-dark-light rounded-md border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium mb-1 text-gray-300;
+  }
+  
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-light;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-600 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+  
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  /* Shadow */
+  .shadow-glow {
+    @apply shadow-[0_0_10px_rgba(229,9,20,0.5)];
+  }
+  
+  /* Responsive Design */
+  .grid-cards {
+    @apply grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6;
+  }
 }

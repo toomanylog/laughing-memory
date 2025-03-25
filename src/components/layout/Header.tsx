@@ -3,159 +3,229 @@
 import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
-import { FaUser, FaSignOutAlt, FaSignInAlt, FaCog, FaBars, FaTimes } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaSignInAlt, FaCog, FaBars, FaTimes, FaHome, FaFilm, FaTv, FaHeart } from 'react-icons/fa';
 import SearchBar from '@/components/SearchBar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function Header() {
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
+  
+  // Vérifier explicitement si l'utilisateur est admin
+  useEffect(() => {
+    if (session?.user) {
+      console.log("Session user:", session.user);
+      console.log("isAdmin status:", session.user.isAdmin);
+      setIsAdminUser(!!session.user.isAdmin);
+    }
+  }, [session]);
+  
+  // Ajouter un effet de scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const isActive = (path: string) => {
+    return pathname === path;
+  };
 
   return (
-    <header className="bg-black/80 backdrop-blur-md sticky top-0 z-50 shadow-md">
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-dark shadow-lg' : 'bg-gradient-to-b from-dark to-transparent'
+    }`}>
       <div className="container mx-auto flex justify-between items-center p-4">
-        <Link href="/" className="text-2xl font-bold text-white hover:text-primary transition-colors">
-          StreamFlix
-        </Link>
+        <div className="flex items-center">
+          <Link href="/" className="text-2xl font-bold mr-8">
+            <span className="text-primary">Stream</span>
+            <span className="text-white">Flix</span>
+          </Link>
 
-        <div className="hidden md:block mx-4 flex-grow max-w-md">
-          <SearchBar />
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link 
+              href="/" 
+              className={`nav-link ${isActive('/') ? 'active' : ''}`}
+            >
+              <span className="flex items-center gap-2">
+                <FaHome className={isActive('/') ? 'text-primary' : ''} />
+                Accueil
+              </span>
+            </Link>
+            <Link 
+              href="/movies" 
+              className={`nav-link ${isActive('/movies') ? 'active' : ''}`}
+            >
+              <span className="flex items-center gap-2">
+                <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
+                Films
+              </span>
+            </Link>
+            <Link 
+              href="/series" 
+              className={`nav-link ${isActive('/series') ? 'active' : ''}`}
+            >
+              <span className="flex items-center gap-2">
+                <FaTv className={isActive('/series') ? 'text-primary' : ''} />
+                Séries
+              </span>
+            </Link>
+            <Link 
+              href="/favorites" 
+              className={`nav-link ${isActive('/favorites') ? 'active' : ''}`}
+            >
+              <span className="flex items-center gap-2">
+                <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
+                Favoris
+              </span>
+            </Link>
+          </nav>
         </div>
 
-        <nav className="hidden md:flex space-x-6">
-          <Link href="/" className="text-white hover:text-primary transition-colors">
-            Accueil
-          </Link>
-          <Link href="/movies" className="text-white hover:text-primary transition-colors">
-            Films
-          </Link>
-          <Link href="/series" className="text-white hover:text-primary transition-colors">
-            Séries
-          </Link>
-          <Link href="/favorites" className="text-white hover:text-primary transition-colors">
-            Favoris
-          </Link>
-        </nav>
+        <div className="flex items-center gap-4">
+          <div className="hidden md:block">
+            <SearchBar />
+          </div>
 
-        <div className="hidden md:flex items-center space-x-2">
-          {session ? (
-            <>
-              {session.user.isAdmin && (
+          <div className="hidden md:flex items-center">
+            {session ? (
+              <div className="flex items-center gap-2">
+                {/* Débug: Affiche toujours le bouton admin pour tester */}
                 <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="text-white">
-                    <FaCog className="mr-2" />
-                    Admin
+                  <Button variant="ghost" size="sm" className="rounded-full bg-dark-light hover:bg-dark-light/80">
+                    <FaCog className="mr-2 text-accent-yellow" />
+                    Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
                   </Button>
                 </Link>
-              )}
-              <Link href="/profile">
-                <Button variant="ghost" size="sm" className="text-white">
-                  <FaUser className="mr-2" />
-                  {session.user.name || 'Profil'}
+                <Link href="/profile">
+                  <Button variant="ghost" size="sm" className="rounded-full bg-dark-light hover:bg-dark-light/80">
+                    <FaUser className="mr-2 text-accent-blue" />
+                    {session.user.name || 'Profil'}
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-full bg-primary hover:bg-primary/80"
+                  onClick={() => signOut()}
+                >
+                  <FaSignOutAlt className="mr-2" />
+                  Déconnexion
                 </Button>
-              </Link>
+              </div>
+            ) : (
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="text-white"
-                onClick={() => signOut()}
+                className="rounded-full bg-primary hover:bg-primary/80 text-white"
+                onClick={() => signIn()}
               >
-                <FaSignOutAlt className="mr-2" />
-                Déconnexion
+                <FaSignInAlt className="mr-2" />
+                Connexion
               </Button>
-            </>
-          ) : (
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-white"
-              onClick={() => signIn()}
+              className="rounded-full bg-dark-light p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <FaSignInAlt className="mr-2" />
-              Connexion
+              {mobileMenuOpen ? <FaTimes /> : <FaBars />}
             </Button>
-          )}
-        </div>
-
-        {/* Mobile menu button */}
-        <div className="md:hidden">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-white"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-          </Button>
+          </div>
         </div>
       </div>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-gray-900 shadow-lg py-4">
-          <div className="container mx-auto px-4 space-y-4">
+        <div className="md:hidden bg-dark-light animate-fade-in">
+          <div className="container mx-auto px-4 py-6 space-y-6">
             <div className="mb-4">
               <SearchBar />
             </div>
             
-            <nav className="flex flex-col space-y-3">
+            <nav className="flex flex-col space-y-4">
               <Link 
                 href="/" 
-                className="text-white hover:text-primary transition-colors"
+                className={`text-lg font-medium ${isActive('/') ? 'text-primary' : 'text-white'}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Accueil
+                <span className="flex items-center gap-2">
+                  <FaHome className={isActive('/') ? 'text-primary' : ''} />
+                  Accueil
+                </span>
               </Link>
               <Link 
                 href="/movies" 
-                className="text-white hover:text-primary transition-colors"
+                className={`text-lg font-medium ${isActive('/movies') ? 'text-primary' : 'text-white'}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Films
+                <span className="flex items-center gap-2">
+                  <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
+                  Films
+                </span>
               </Link>
               <Link 
                 href="/series" 
-                className="text-white hover:text-primary transition-colors"
+                className={`text-lg font-medium ${isActive('/series') ? 'text-primary' : 'text-white'}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Séries
+                <span className="flex items-center gap-2">
+                  <FaTv className={isActive('/series') ? 'text-primary' : ''} />
+                  Séries
+                </span>
               </Link>
               <Link 
                 href="/favorites" 
-                className="text-white hover:text-primary transition-colors"
+                className={`text-lg font-medium ${isActive('/favorites') ? 'text-primary' : 'text-white'}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Favoris
+                <span className="flex items-center gap-2">
+                  <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
+                  Favoris
+                </span>
               </Link>
             </nav>
             
-            <div className="pt-3 border-t border-gray-700 flex flex-col space-y-2">
+            <div className="pt-4 border-t border-gray-700 flex flex-col space-y-3">
               {session ? (
                 <>
-                  {session.user.isAdmin && (
-                    <Link 
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button variant="ghost" size="sm" className="text-white w-full justify-start">
-                        <FaCog className="mr-2" />
-                        Admin
-                      </Button>
-                    </Link>
-                  )}
+                  {/* Version mobile: aussi ajouter accès admin */}
+                  <Link 
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button className="btn-outline w-full justify-start">
+                      <FaCog className="mr-2 text-accent-yellow" />
+                      Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
+                    </Button>
+                  </Link>
                   <Link 
                     href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Button variant="ghost" size="sm" className="text-white w-full justify-start">
-                      <FaUser className="mr-2" />
+                    <Button className="btn-outline w-full justify-start">
+                      <FaUser className="mr-2 text-accent-blue" />
                       {session.user.name || 'Profil'}
                     </Button>
                   </Link>
                   <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-white w-full justify-start"
+                    className="btn-primary w-full justify-start"
                     onClick={() => {
                       signOut();
                       setMobileMenuOpen(false);
@@ -167,9 +237,7 @@ export default function Header() {
                 </>
               ) : (
                 <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-white w-full justify-start"
+                  className="btn-primary w-full justify-start"
                   onClick={() => {
                     signIn();
                     setMobileMenuOpen(false);

@@ -7,11 +7,13 @@ import { ref, get, update } from 'firebase/database';
 import { db, auth } from '@/lib/firebase';
 import { updateProfile, updateEmail, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { Button } from '@/components/ui/Button';
-import { FaUser, FaSignOutAlt, FaKey, FaEdit } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaKey, FaEdit, FaEnvelope, FaLock, FaSave, FaSpinner } from 'react-icons/fa';
 import { User } from '@/lib/types';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
+import { FormEvent } from 'react';
 
 // Schéma de validation pour le profil
 const profileSchema = z.object({
@@ -43,6 +45,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
 
   const { register: registerProfile, handleSubmit: handleSubmitProfile, formState: { errors: profileErrors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -107,83 +110,75 @@ export default function ProfilePage() {
     }
   }, [userData]);
 
-  const onUpdateProfile = async (data: ProfileFormValues) => {
-    if (!auth.currentUser || !session?.user?.id) return;
-    
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setUpdateLoading(true);
     setError('');
     setSuccessMessage('');
-    setUpdateLoading(true);
     
+    if (!auth.currentUser || !userData) {
+      setError('Utilisateur non authentifié');
+      setUpdateLoading(false);
+      return;
+    }
+
     try {
-      // Mise à jour du profil dans Firebase Auth
-      await updateProfile(auth.currentUser, {
-        displayName: data.displayName,
-      });
-      
-      // Mise à jour de l'email si modifié
-      if (data.email !== auth.currentUser.email) {
-        await updateEmail(auth.currentUser, data.email);
+      const form = e.target as HTMLFormElement;
+      const name = form.elements.namedItem('displayName') as HTMLInputElement;
+      const email = form.elements.namedItem('email') as HTMLInputElement;
+      const newPassword = form.elements.namedItem('newPassword') as HTMLInputElement;
+
+      // Mettre à jour le nom dans Realtime Database
+      if (name && name.value !== userData.displayName && session?.user?.id) {
+        const userRef = ref(db, `users/${session.user.id}`);
+        await update(userRef, {
+          displayName: name.value
+        });
+        setUserData({
+          ...userData,
+          displayName: name.value
+        });
       }
-      
-      // Mise à jour des données dans la base de données
-      const userRef = ref(db, `users/${session.user.id}`);
-      await update(userRef, {
-        displayName: data.displayName,
-        email: data.email,
-      });
-      
-      // Mise à jour de la session
-      await updateSession({
-        ...session,
-        user: {
-          ...session.user,
-          name: data.displayName,
-          email: data.email,
+
+      // Mettre à jour l'email et/ou le mot de passe
+      if ((email && email.value !== auth.currentUser.email) || 
+          (newPassword && newPassword.value)) {
+        
+        if (!currentPassword) {
+          setError("Mot de passe actuel requis pour modifier l'email ou le mot de passe");
+          setUpdateLoading(false);
+          return;
         }
-      });
-      
+
+        // Réauthentifier l'utilisateur avant de modifier l'email ou le mot de passe
+        if (auth.currentUser.email) {
+          const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+          await reauthenticateWithCredential(auth.currentUser, credential);
+          
+          // Mettre à jour l'email
+          if (email && email.value !== auth.currentUser.email && session?.user?.id) {
+            await updateEmail(auth.currentUser, email.value);
+            
+            // Mettre à jour les données dans la DB
+            const userRef = ref(db, `users/${session.user.id}`);
+            await update(userRef, {
+              email: email.value
+            });
+          }
+          
+          // Mettre à jour le mot de passe
+          if (newPassword && newPassword.value) {
+            await updatePassword(auth.currentUser, newPassword.value);
+          }
+        }
+      }
+
       setSuccessMessage('Profil mis à jour avec succès');
-      setUserData(prev => prev ? {...prev, displayName: data.displayName, email: data.email} : null);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error);
-      setError('Une erreur est survenue lors de la mise à jour du profil');
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      setError(error.message || 'Erreur lors de la mise à jour du profil');
     } finally {
       setUpdateLoading(false);
-    }
-  };
-
-  const onUpdatePassword = async (data: PasswordFormValues) => {
-    if (!auth.currentUser || !session?.user?.id) return;
-    
-    setError('');
-    setSuccessMessage('');
-    setPasswordLoading(true);
-    
-    try {
-      // Réauthentifier l'utilisateur
-      const email = auth.currentUser.email || '';
-      if (!email) {
-        throw new Error('Email non disponible');
-      }
-      
-      const credential = EmailAuthProvider.credential(
-        email,
-        data.currentPassword
-      );
-      
-      await reauthenticateWithCredential(auth.currentUser, credential);
-      
-      // Mettre à jour le mot de passe
-      await updatePassword(auth.currentUser, data.newPassword);
-      
-      setSuccessMessage('Mot de passe mis à jour avec succès');
-      resetPassword();
-      setShowPasswordForm(false);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du mot de passe:', error);
-      setError('Mot de passe incorrect ou erreur de mise à jour');
-    } finally {
-      setPasswordLoading(false);
     }
   };
 
@@ -193,8 +188,10 @@ export default function ProfilePage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="flex justify-center items-center min-h-[70vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="container mx-auto px-4 py-20 flex justify-center items-center min-h-screen">
+        <div className="animate-spin text-primary">
+          <FaSpinner size={40} />
+        </div>
       </div>
     );
   }
@@ -204,163 +201,101 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Mon Profil</h1>
-      
-      {error && (
-        <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
-      
-      {successMessage && (
-        <div className="bg-green-500/20 border border-green-500 text-green-300 px-4 py-3 rounded mb-6">
-          {successMessage}
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2">
-          <div className="bg-gray-800/40 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-6 flex items-center">
-              <FaUser className="mr-2" />
-              Informations personnelles
-            </h2>
-            
-            <form id="profile-form" onSubmit={handleSubmitProfile(onUpdateProfile)} className="space-y-4">
-              <div>
-                <label htmlFor="displayName" className="block text-sm font-medium mb-1">
-                  Nom d'utilisateur
-                </label>
-                <input
-                  id="displayName"
-                  type="text"
-                  {...registerProfile('displayName')}
-                  className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-                />
-                {profileErrors.displayName && (
-                  <p className="text-red-400 text-sm mt-1">{profileErrors.displayName.message}</p>
-                )}
-              </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium mb-1">
-                  Email
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  {...registerProfile('email')}
-                  className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-                />
-                {profileErrors.email && (
-                  <p className="text-red-400 text-sm mt-1">{profileErrors.email.message}</p>
-                )}
-              </div>
-              
-              <Button
-                type="submit"
-                className="mt-4"
-                disabled={updateLoading}
-              >
-                {updateLoading ? 'Mise à jour...' : 'Mettre à jour le profil'}
-              </Button>
-            </form>
-            
-            <div className="mt-8 pt-6 border-t border-gray-700">
-              <button
-                onClick={() => setShowPasswordForm(!showPasswordForm)}
-                className="flex items-center text-primary hover:underline"
-              >
-                <FaKey className="mr-2" />
-                {showPasswordForm ? 'Annuler' : 'Changer de mot de passe'}
-              </button>
-              
-              {showPasswordForm && (
-                <form onSubmit={handleSubmitPassword(onUpdatePassword)} className="space-y-4 mt-4">
-                  <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium mb-1">
-                      Mot de passe actuel
-                    </label>
-                    <input
-                      id="currentPassword"
-                      type="password"
-                      {...registerPassword('currentPassword')}
-                      className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-                    />
-                    {passwordErrors.currentPassword && (
-                      <p className="text-red-400 text-sm mt-1">{passwordErrors.currentPassword.message}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="newPassword" className="block text-sm font-medium mb-1">
-                      Nouveau mot de passe
-                    </label>
-                    <input
-                      id="newPassword"
-                      type="password"
-                      {...registerPassword('newPassword')}
-                      className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-                    />
-                    {passwordErrors.newPassword && (
-                      <p className="text-red-400 text-sm mt-1">{passwordErrors.newPassword.message}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
-                      Confirmer le nouveau mot de passe
-                    </label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      {...registerPassword('confirmPassword')}
-                      className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-                    />
-                    {passwordErrors.confirmPassword && (
-                      <p className="text-red-400 text-sm mt-1">{passwordErrors.confirmPassword.message}</p>
-                    )}
-                  </div>
-                  
-                  <Button
-                    type="submit"
-                    className="mt-4"
-                    disabled={passwordLoading}
-                  >
-                    {passwordLoading ? 'Modification...' : 'Modifier le mot de passe'}
-                  </Button>
-                </form>
-              )}
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-20">
+      <div className="max-w-2xl mx-auto bg-dark rounded-lg shadow-xl overflow-hidden">
+        <div className="bg-primary p-6 text-white">
+          <h1 className="text-2xl font-bold">Profil Utilisateur</h1>
+          <p className="text-sm opacity-80">Gérez vos informations personnelles</p>
         </div>
         
-        <div>
-          <div className="bg-gray-800/40 rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-6">Mon compte</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-400">Membre depuis</p>
-                <p>{userData?.createdAt ? new Date(userData.createdAt).toLocaleDateString() : '-'}</p>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-400">Type de compte</p>
-                <p>{userData?.isAdmin ? 'Administrateur' : 'Utilisateur'}</p>
-              </div>
-              
-              <Button
-                variant="destructive"
-                className="w-full mt-4"
-                onClick={handleLogout}
-              >
-                <FaSignOutAlt className="mr-2" />
-                Se déconnecter
-              </Button>
+        <div className="p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-900/30 border border-red-500 rounded text-red-300">
+              {error}
             </div>
-          </div>
+          )}
+          
+          {successMessage && (
+            <div className="mb-4 p-3 bg-green-900/30 border border-green-500 rounded text-green-300">
+              {successMessage}
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="displayName" className="block text-gray-300 mb-2 text-sm font-medium">
+                  <FaUser className="inline mr-2" /> Nom
+                </label>
+                <input
+                  type="text"
+                  id="displayName"
+                  defaultValue={userData?.displayName || ''}
+                  className="form-input"
+                  placeholder="Votre nom"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="email" className="block text-gray-300 mb-2 text-sm font-medium">
+                  <FaEnvelope className="inline mr-2" /> Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  defaultValue={auth.currentUser?.email || ''}
+                  className="form-input"
+                  placeholder="votre@email.com"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="currentPassword" className="block text-gray-300 mb-2 text-sm font-medium">
+                  <FaLock className="inline mr-2" /> Mot de passe actuel
+                </label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="form-input"
+                  placeholder="Requis pour changer l'email ou le mot de passe"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="newPassword" className="block text-gray-300 mb-2 text-sm font-medium">
+                  <FaLock className="inline mr-2" /> Nouveau mot de passe
+                </label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  className="form-input"
+                  placeholder="Laissez vide pour ne pas changer"
+                />
+              </div>
+              
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  className="btn-primary w-full flex items-center justify-center transition-all duration-300 transform hover:scale-105"
+                  disabled={updateLoading}
+                >
+                  {updateLoading ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2" />
+                      Mise à jour en cours...
+                    </>
+                  ) : (
+                    <>
+                      <FaSave className="mr-2" />
+                      Mettre à jour le profil
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
