@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Styles personnalisés supplémentaires */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Styles de scrollbar personnalisés */
+* {
+  scrollbar-color: #6b6b6b #2b2b2b;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+  background-color: #2b2b2b;
+}
+
+*::-webkit-scrollbar-thumb {
+  border-radius: 8px;
+  background-color: #6b6b6b;
+  min-height: 24px;
+  border: 3px solid #2b2b2b;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #959595;
+} 

@@ -1,37 +1,59 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material';
-import Layout from './components/Layout';
-import AdminRoute from './components/AdminRoute';
-import Home from './pages/Home';
-import Watch from './pages/Watch';
-import Login from './pages/Login';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
-import { theme } from './theme';
+import { lazy, Suspense } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { CircularProgress } from '@mui/material';
+import { Layout } from './components/layout/Layout';
+import ProtectedRoute from './components/layout/ProtectedRoute';
+import AdminRoute from './components/layout/AdminRoute';
 
-const App = () => {
+// Lazy load des pages pour optimiser le chargement
+const HomePage = lazy(() => import('./pages/HomePage'));
+const WatchPage = lazy(() => import('./pages/WatchPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+
+// Loader de page
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen">
+    <CircularProgress />
+  </div>
+);
+
+export function App() {
+  const location = useLocation();
+
   return (
-    <ThemeProvider theme={theme}>
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/watch/:id" element={<Watch />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route
-              path="/admin"
+    <Layout>
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<PageLoader />}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/watch/:id" element={<WatchPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
               element={
                 <AdminRoute>
-                  <Admin />
+                  <AdminPage />
                 </AdminRoute>
-              }
+              } 
             />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </Layout>
-      </Router>
-    </ThemeProvider>
+        </Suspense>
+      </AnimatePresence>
+    </Layout>
   );
-};
-
-export default App; 
+} 
