@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Typography,
@@ -8,7 +7,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   Button,
   List,
   ListItem,
@@ -36,7 +34,6 @@ interface ProgressItem {
 }
 
 const Profile = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [progress, setProgress] = useState<ProgressItem[]>([]);

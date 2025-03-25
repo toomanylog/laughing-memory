@@ -24,8 +24,6 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -141,7 +139,6 @@ const Admin = () => {
       if (editingContent) {
         await set(ref(database, `content/${editingContent.id}`), contentData);
       } else {
-        const newContentRef = ref(database, 'content');
         await set(ref(database, `content/${Date.now()}`), contentData);
       }
 
