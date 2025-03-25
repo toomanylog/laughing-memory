@@ -14,11 +14,13 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useAuth } from '../hooks/useAuth';
+import { useAdmin } from '../hooks/useAdmin';
 
 const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { isAdmin, loading } = useAdmin();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -111,9 +113,19 @@ const Navigation = () => {
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {renderMenuItems()}
             {user ? (
-              <Button color="inherit" onClick={handleLogout}>
-                Déconnexion
-              </Button>
+              <>
+                <Button color="inherit" onClick={() => navigate('/profile')}>
+                  Profil
+                </Button>
+                {isAdmin && !loading && (
+                  <Button color="inherit" onClick={() => navigate('/admin')}>
+                    Admin
+                  </Button>
+                )}
+                <Button color="inherit" onClick={handleLogout}>
+                  Déconnexion
+                </Button>
+              </>
             ) : (
               <Button color="inherit" onClick={() => navigate('/login')}>
                 Connexion
