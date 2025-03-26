@@ -36,6 +36,11 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Fermer le menu mobile quand on change de page
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   const isActive = (path: string) => {
     return pathname === path;
   };
@@ -130,6 +135,7 @@ export default function Header() {
           <button 
             className="mobile-menu-btn"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
             {mobileMenuOpen ? <FaTimes /> : <FaBars />}
           </button>
@@ -137,102 +143,96 @@ export default function Header() {
       </div>
 
       {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="mobile-menu animate-fade-in">
-          <div className="mobile-menu-container">
-            <div className="mobile-search">
-              <input
-                type="text"
-                placeholder="Rechercher des animés, mangas..."
-                className="search-input"
-              />
-              <FaSearch className="search-icon" />
-            </div>
-            
-            <nav className="mobile-nav">
-              <Link 
-                href="/" 
-                className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <FaHome className={isActive('/') ? 'text-primary' : ''} />
-                Accueil
-              </Link>
-              <Link 
-                href="/animes" 
-                className={`mobile-nav-link ${isActive('/animes') ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <FaFilm className={isActive('/animes') ? 'text-primary' : ''} />
-                Animés
-              </Link>
-              <Link 
-                href="/mangas" 
-                className={`mobile-nav-link ${isActive('/mangas') ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <FaTv className={isActive('/mangas') ? 'text-primary' : ''} />
-                Mangas
-              </Link>
-              <Link 
-                href="/favorites" 
-                className={`mobile-nav-link ${isActive('/favorites') ? 'active' : ''}`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
-                Favoris
-              </Link>
-            </nav>
-            
-            <div className="mobile-user-actions">
-              {session ? (
-                <>
-                  {/* Version mobile: aussi ajouter accès admin */}
-                  <Link 
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <button className="btn btn-ghost btn-sm full-width">
-                      <FaCog className="text-primary" />
-                      Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
-                    </button>
-                  </Link>
-                  <Link 
-                    href="/profile"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <button className="btn btn-ghost btn-sm full-width">
-                      <FaUser className="text-primary" />
-                      {session.user.name || 'Profil'}
-                    </button>
-                  </Link>
-                  <button 
-                    className="btn btn-primary btn-sm full-width"
-                    onClick={() => {
-                      signOut();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <FaSignOutAlt />
-                    Déconnexion
+      <div className={`mobile-menu ${mobileMenuOpen ? 'block' : 'hidden'} animate-fade-in`}>
+        <div className="mobile-menu-container">
+          <div className="mobile-search">
+            <input
+              type="text"
+              placeholder="Rechercher des animés, mangas..."
+              className="search-input"
+            />
+            <FaSearch className="search-icon" />
+          </div>
+          
+          <nav className="mobile-nav">
+            <Link 
+              href="/" 
+              className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}
+            >
+              <FaHome className={isActive('/') ? 'text-primary' : ''} />
+              Accueil
+            </Link>
+            <Link 
+              href="/animes" 
+              className={`mobile-nav-link ${isActive('/animes') ? 'active' : ''}`}
+            >
+              <FaFilm className={isActive('/animes') ? 'text-primary' : ''} />
+              Animés
+            </Link>
+            <Link 
+              href="/mangas" 
+              className={`mobile-nav-link ${isActive('/mangas') ? 'active' : ''}`}
+            >
+              <FaTv className={isActive('/mangas') ? 'text-primary' : ''} />
+              Mangas
+            </Link>
+            <Link 
+              href="/favorites" 
+              className={`mobile-nav-link ${isActive('/favorites') ? 'active' : ''}`}
+            >
+              <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
+              Favoris
+            </Link>
+          </nav>
+          
+          <div className="mobile-user-actions">
+            {session ? (
+              <>
+                {/* Version mobile: aussi ajouter accès admin */}
+                <Link 
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <button className="btn btn-ghost btn-sm full-width">
+                    <FaCog className="text-primary" />
+                    Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
                   </button>
-                </>
-              ) : (
+                </Link>
+                <Link 
+                  href="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <button className="btn btn-ghost btn-sm full-width">
+                    <FaUser className="text-primary" />
+                    {session.user.name || 'Profil'}
+                  </button>
+                </Link>
                 <button 
                   className="btn btn-primary btn-sm full-width"
                   onClick={() => {
-                    signIn();
+                    signOut();
                     setMobileMenuOpen(false);
                   }}
                 >
-                  <FaSignInAlt />
-                  Connexion
+                  <FaSignOutAlt />
+                  Déconnexion
                 </button>
-              )}
-            </div>
+              </>
+            ) : (
+              <button 
+                className="btn btn-primary btn-sm full-width"
+                onClick={() => {
+                  signIn();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <FaSignInAlt />
+                Connexion
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </header>
   );
 } 

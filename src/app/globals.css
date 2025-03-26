@@ -362,13 +362,23 @@ nav {
 }
 
 .mobile-menu {
-  display: none;
   position: fixed;
   top: 4rem;
   left: 0;
   right: 0;
   background-color: var(--dark-color);
   z-index: 40;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Display utilities */
+.block {
+  display: block;
+}
+
+.hidden {
+  display: none;
 }
 
 /* Hero Banner */
@@ -855,6 +865,8 @@ nav {
   border-spacing: 0;
   border-radius: 8px;
   overflow: hidden;
+  background-color: var(--dark-card-color);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .admin-table th {
@@ -896,10 +908,6 @@ nav {
   }
   
   .mobile-menu-btn {
-    display: block;
-  }
-  
-  .mobile-menu.open {
     display: block;
   }
   
@@ -965,6 +973,10 @@ nav {
   gap: 1rem;
 }
 
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
 .mt-8 {
   margin-top: 2rem;
 }
@@ -981,6 +993,10 @@ nav {
   margin-bottom: 1.5rem;
 }
 
+.mr-4 {
+  margin-right: 1rem;
+}
+
 .p-2 {
   padding: 0.5rem;
 }
@@ -989,8 +1005,26 @@ nav {
   padding: 0.75rem;
 }
 
-.rounded {
-  border-radius: 0.25rem;
+.p-4 {
+  padding: 1rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.pl-10 {
+  padding-left: 2.5rem;
+}
+
+.rounded-lg {
+  border-radius: 0.5rem;
 }
 
 .text-center {
@@ -1017,10 +1051,38 @@ nav {
   font-size: 1rem;
 }
 
+.text-3xl {
+  font-size: 1.875rem;
+}
+
 .font-bold {
   font-weight: 700;
 }
 
 .bg-dark-card-color {
   background-color: var(--dark-card-color);
+}
+
+.transform {
+  transform: translateY(-50%);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.w-5 {
+  width: 1.25rem;
+}
+
+.h-5 {
+  height: 1.25rem;
+}
+
+.space-x-4 > * + * {
+  margin-left: 1rem;
+}
+
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
 }
