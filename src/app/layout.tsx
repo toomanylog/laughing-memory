@@ -1,15 +1,16 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { NextAuthProvider } from '@/providers/NextAuthProvider';
+import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { NextAuthProvider } from '@/providers/NextAuthProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Lokum - Votre plateforme d\'animés en streaming',
-  description: 'Découvrez et regardez vos animés et mangas préférés en streaming gratuitement',
+  title: 'Lokum - La Plateforme de Streaming Anime',
+  description: 'Découvrez des centaines d\'animés et mangas en streaming HD',
 };
 
 export default function RootLayout({
@@ -20,13 +21,15 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={inter.className}>
-        <NextAuthProvider>
-          <div className="app-container">
+        <div className="app-container">
+          <NextAuthProvider>
             <Header />
-            <main>{children}</main>
+            <main>
+              {children}
+            </main>
             <Footer />
-          </div>
-        </NextAuthProvider>
+          </NextAuthProvider>
+        </div>
       </body>
     </html>
   );
