@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { FaUserPlus, FaKey } from 'react-icons/fa';
+import { FaUserPlus, FaKey, FaSignInAlt } from 'react-icons/fa';
 
 // Schéma de validation
 const loginSchema = z.object({
@@ -52,73 +52,88 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-gray-800/50 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Connexion</h1>
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-md mx-auto bg-dark-card-color rounded-lg shadow-lg p-8 border border-gray-700">
+        <h1 className="text-3xl font-bold mb-6 text-center">Connexion</h1>
         
         {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-4">
+          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6">
             {error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium mb-2 text-white">
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-              placeholder="votre@email.com"
-            />
+            <div className="relative">
+              <input
+                id="email"
+                type="email"
+                {...register('email')}
+                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="votre@email.com"
+              />
+            </div>
             {errors.email && (
-              <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.email.message}</p>
             )}
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-sm font-medium mb-2 text-white">
               Mot de passe
             </label>
-            <input
-              id="password"
-              type="password"
-              {...register('password')}
-              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type="password"
+                {...register('password')}
+                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="••••••••"
+              />
+            </div>
             {errors.password && (
-              <p className="text-red-400 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.password.message}</p>
             )}
-            <div className="mt-1 text-right">
+            <div className="mt-2 text-right">
               <Link href="/auth/reset-password" className="text-primary hover:underline text-sm">
                 Mot de passe oublié ?
               </Link>
             </div>
           </div>
           
-          <Button
+          <button
             type="submit"
-            className="w-full mt-6"
+            className="btn btn-primary w-full py-3"
             disabled={loading}
           >
-            {loading ? 'Connexion en cours...' : 'Se connecter'}
-          </Button>
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Connexion en cours...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center">
+                <FaSignInAlt className="mr-2" />
+                Se connecter
+              </span>
+            )}
+          </button>
         </form>
         
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Pas encore de compte ?{' '}
-            <Link href="/auth/signup" className="text-primary hover:underline">
-              <span className="flex items-center justify-center gap-1 mt-2">
-                <FaUserPlus />
-                <span>S'inscrire</span>
-              </span>
-            </Link>
+        <div className="mt-8 pt-6 border-t border-gray-700 text-center">
+          <p className="text-gray-300">
+            Pas encore de compte ?
           </p>
+          <Link href="/auth/signup" className="btn btn-outline w-full mt-3 flex items-center justify-center">
+            <FaUserPlus className="mr-2" />
+            <span>S'inscrire</span>
+          </Link>
         </div>
       </div>
     </div>

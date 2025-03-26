@@ -260,50 +260,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-      
-      {/* Footer */}
-      <footer className="footer">
-        <div className="section-container">
-          <div className="footer-grid">
-            <div>
-              <h3 className="logo">
-                <span className="logo-primary">Lo</span>kum
-              </h3>
-              <p className="footer-description">
-                La plateforme de streaming qui vous offre le meilleur des animés et mangas.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="footer-title">Explorer</h4>
-              <Link href="/animes" className="footer-link">Animés</Link>
-              <Link href="/mangas" className="footer-link">Mangas</Link>
-              <Link href="/search?category=trending" className="footer-link">Tendances</Link>
-              <Link href="/search?category=new" className="footer-link">Nouveautés</Link>
-            </div>
-            
-            <div>
-              <h4 className="footer-title">Mon compte</h4>
-              <Link href="/profile" className="footer-link">Profil</Link>
-              <Link href="/favorites" className="footer-link">Favoris</Link>
-              <Link href="/auth/signin" className="footer-link">Connexion</Link>
-              <Link href="/auth/signup" className="footer-link">Inscription</Link>
-            </div>
-            
-            <div>
-              <h4 className="footer-title">Aide</h4>
-              <Link href="/terms" className="footer-link">Conditions d'utilisation</Link>
-              <Link href="/privacy" className="footer-link">Politique de confidentialité</Link>
-              <Link href="/contact" className="footer-link">Contactez-nous</Link>
-              <Link href="/faq" className="footer-link">FAQ</Link>
-            </div>
-          </div>
-          
-          <div className="footer-copyright">
-            &copy; {new Date().getFullYear()} Lokum. Tous droits réservés.
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

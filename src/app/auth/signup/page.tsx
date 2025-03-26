@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { FaSignInAlt } from 'react-icons/fa';
+import { FaSignInAlt, FaUserPlus, FaUser, FaEnvelope, FaLock, FaCheckCircle } from 'react-icons/fa';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { ref, set } from 'firebase/database';
 import { auth, db } from '@/lib/firebase';
@@ -85,100 +84,131 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="bg-gray-800/50 p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Créer un compte</h1>
+    <div className="container mx-auto px-4 py-12">
+      <div className="max-w-md mx-auto bg-dark-card-color rounded-lg shadow-lg p-8 border border-gray-700">
+        <h1 className="text-3xl font-bold mb-6 text-center">Créer un compte</h1>
         
         {error && (
-          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-4">
+          <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6">
             {error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium mb-1">
+            <label htmlFor="displayName" className="block text-sm font-medium mb-2 text-white">
               Nom d'utilisateur
             </label>
-            <input
-              id="displayName"
-              type="text"
-              {...register('displayName')}
-              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-              placeholder="Votre nom"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaUser />
+              </span>
+              <input
+                id="displayName"
+                type="text"
+                {...register('displayName')}
+                className="w-full pl-10 pr-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="Votre nom"
+              />
+            </div>
             {errors.displayName && (
-              <p className="text-red-400 text-sm mt-1">{errors.displayName.message}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.displayName.message}</p>
             )}
           </div>
           
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-medium mb-2 text-white">
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-              placeholder="votre@email.com"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaEnvelope />
+              </span>
+              <input
+                id="email"
+                type="email"
+                {...register('email')}
+                className="w-full pl-10 pr-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="votre@email.com"
+              />
+            </div>
             {errors.email && (
-              <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.email.message}</p>
             )}
           </div>
           
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-sm font-medium mb-2 text-white">
               Mot de passe
             </label>
-            <input
-              id="password"
-              type="password"
-              {...register('password')}
-              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaLock />
+              </span>
+              <input
+                id="password"
+                type="password"
+                {...register('password')}
+                className="w-full pl-10 pr-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="••••••••"
+              />
+            </div>
             {errors.password && (
-              <p className="text-red-400 text-sm mt-1">{errors.password.message}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.password.message}</p>
             )}
           </div>
           
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2 text-white">
               Confirmer le mot de passe
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              {...register('confirmPassword')}
-              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <FaCheckCircle />
+              </span>
+              <input
+                id="confirmPassword"
+                type="password"
+                {...register('confirmPassword')}
+                className="w-full pl-10 pr-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="••••••••"
+              />
+            </div>
             {errors.confirmPassword && (
-              <p className="text-red-400 text-sm mt-1">{errors.confirmPassword.message}</p>
+              <p className="text-red-400 text-sm mt-2">{errors.confirmPassword.message}</p>
             )}
           </div>
           
-          <Button
+          <button
             type="submit"
-            className="w-full mt-6"
+            className="btn btn-primary w-full py-3 mt-4"
             disabled={loading}
           >
-            {loading ? 'Inscription en cours...' : 'S\'inscrire'}
-          </Button>
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Inscription en cours...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center">
+                <FaUserPlus className="mr-2" />
+                S'inscrire
+              </span>
+            )}
+          </button>
         </form>
         
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
-            Déjà inscrit ?{' '}
-            <Link href="/auth/signin" className="text-primary hover:underline">
-              <span className="flex items-center justify-center gap-1 mt-2">
-                <FaSignInAlt />
-                <span>Se connecter</span>
-              </span>
-            </Link>
+        <div className="mt-8 pt-6 border-t border-gray-700 text-center">
+          <p className="text-gray-300">
+            Déjà inscrit ?
           </p>
+          <Link href="/auth/signin" className="btn btn-outline w-full mt-3 flex items-center justify-center">
+            <FaSignInAlt className="mr-2" />
+            <span>Se connecter</span>
+          </Link>
         </div>
       </div>
     </div>
