@@ -95,10 +95,10 @@ export default function Home() {
           <div className="container mx-auto px-4 h-full flex items-end pb-16 relative z-10">
             <div className="max-w-2xl">
               <div className="flex items-center mb-4 space-x-3">
-                <span className="bg-primary text-white text-sm px-3 py-1 rounded-full">
+                <span className="bg-primary text-white text-sm px-3 py-1 rounded">
                   À la une
                 </span>
-                <span className="bg-[#222222] text-white text-sm px-3 py-1 rounded-full">
+                <span className="bg-[#222222] text-white text-sm px-3 py-1 rounded">
                   {featuredContent.type === 'movie' ? 'Film' : 'Série'}
                 </span>
                 <div className="flex items-center text-[#E8B221]">

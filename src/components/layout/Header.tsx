@@ -103,13 +103,13 @@ export default function Header() {
               <div className="flex items-center gap-2">
                 {/* Débug: Affiche toujours le bouton admin pour tester */}
                 <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="rounded-full bg-[#222222] hover:bg-[#222222]/80">
+                  <Button variant="ghost" size="sm" className="rounded bg-[#222222] hover:bg-[#222222]/80">
                     <FaCog className="mr-2 text-[#E8B221]" />
                     Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
                   </Button>
                 </Link>
                 <Link href="/profile">
-                  <Button variant="ghost" size="sm" className="rounded-full bg-[#222222] hover:bg-[#222222]/80">
+                  <Button variant="ghost" size="sm" className="rounded bg-[#222222] hover:bg-[#222222]/80">
                     <FaUser className="mr-2 text-[#2173E8]" />
                     {session.user.name || 'Profil'}
                   </Button>
@@ -117,7 +117,7 @@ export default function Header() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="rounded-full bg-primary hover:bg-primary/80"
+                  className="rounded bg-primary hover:bg-primary/80"
                   onClick={() => signOut()}
                 >
                   <FaSignOutAlt className="mr-2" />
@@ -128,7 +128,7 @@ export default function Header() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="rounded-full bg-primary hover:bg-primary/80 text-white"
+                className="rounded bg-primary hover:bg-primary/80 text-white"
                 onClick={() => signIn()}
               >
                 <FaSignInAlt className="mr-2" />
@@ -142,7 +142,7 @@ export default function Header() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="rounded-full bg-[#222222] p-2"
+              className="rounded bg-[#222222] p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <FaTimes /> : <FaBars />}

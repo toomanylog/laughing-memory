@@ -28,7 +28,7 @@ export default function MediaCard({ content, isFeatured = false }: MediaCardProp
             alt={content.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover rounded-md"
+            className="object-cover rounded"
             priority={isFeatured}
           />
           
@@ -38,12 +38,12 @@ export default function MediaCard({ content, isFeatured = false }: MediaCardProp
           }`}></div>
           
           {/* Badge de type (Film/Série) */}
-          <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
+          <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
             {content.type === 'movie' ? 'Film' : 'Série'}
           </div>
           
           {/* Notation */}
-          <div className="absolute top-2 right-2 bg-[#222222]/80 text-[#E8B221] text-xs px-2 py-1 rounded-full flex items-center">
+          <div className="absolute top-2 right-2 bg-[#222222]/80 text-[#E8B221] text-xs px-2 py-1 rounded flex items-center">
             <FaStar className="mr-1" />
             {content.duration ? `${Math.floor(content.duration / 60)}h${content.duration % 60}` : ''}
           </div>
@@ -59,7 +59,7 @@ export default function MediaCard({ content, isFeatured = false }: MediaCardProp
             <div className="flex justify-between items-center text-xs text-gray-300 mb-2">
               <span>{content.releaseYear}</span>
               <div className="flex items-center">
-                <span className="bg-[#222222] px-2 py-0.5 rounded-full text-xs">
+                <span className="bg-[#222222] px-2 py-0.5 rounded text-xs">
                   {content.genres.length > 0 ? content.genres[0] : ''}
                 </span>
               </div>
@@ -73,7 +73,7 @@ export default function MediaCard({ content, isFeatured = false }: MediaCardProp
                 <FaPlay className="mr-1" />
                 Regarder
               </button>
-              <button className="btn-outline-sm p-2 rounded-full flex items-center justify-center">
+              <button className="btn-outline-sm p-2 rounded flex items-center justify-center">
                 <FaHeart />
               </button>
             </div>

@@ -22,11 +22,11 @@ body {
 @layer components {
   /* Cards & Containers */
   .content-card {
-    @apply overflow-hidden rounded-md bg-[#1E1E1E] shadow-md transition-all duration-300 hover:shadow-lg;
+    @apply overflow-hidden rounded bg-[#1E1E1E] shadow-md transition-all duration-300 hover:shadow-lg;
   }
   
   .media-card {
-    @apply relative overflow-hidden rounded-md shadow-md transition-all duration-300;
+    @apply relative overflow-hidden rounded shadow-md transition-all duration-300;
   }
   
   .media-card:hover {
@@ -56,7 +56,7 @@ body {
   
   /* Buttons */
   .btn {
-    @apply rounded-md px-4 py-2 font-medium transition-all duration-300;
+    @apply rounded px-4 py-2 font-medium transition-all duration-300;
   }
   
   .btn-primary {
@@ -72,11 +72,11 @@ body {
   }
   
   .btn-primary-sm {
-    @apply rounded-md px-3 py-1 text-sm font-medium bg-primary text-white hover:bg-primary/80 transition-all duration-300;
+    @apply rounded px-3 py-1 text-sm font-medium bg-primary text-white hover:bg-primary/80 transition-all duration-300;
   }
   
   .btn-outline-sm {
-    @apply rounded-md text-sm font-medium border border-gray-600 text-white hover:bg-gray-700 transition-all duration-300;
+    @apply rounded text-sm font-medium border border-gray-600 text-white hover:bg-gray-700 transition-all duration-300;
   }
   
   .btn-icon {
@@ -107,7 +107,7 @@ body {
   
   /* Form Elements */
   .form-input {
-    @apply w-full px-3 py-2 bg-[#222222] rounded-md border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply w-full px-3 py-2 bg-[#222222] rounded border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50;
   }
   
   .form-label {
@@ -124,7 +124,7 @@ body {
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-600 rounded-full;
+    @apply bg-gray-600 rounded;
   }
   
   ::-webkit-scrollbar-thumb:hover {
