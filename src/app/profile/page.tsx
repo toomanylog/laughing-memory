@@ -196,16 +196,10 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: '/' });
-  };
-
   if (status === 'loading' || loading) {
     return (
-      <div className="container mx-auto px-4 py-20 flex justify-center items-center min-h-screen">
-        <div className="animate-spin text-primary">
-          <FaSpinner size={40} />
-        </div>
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
       </div>
     );
   }
@@ -215,170 +209,156 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container">
       <h1 className="text-3xl font-bold mb-8">Mon Profil</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-dark-card-color rounded-lg shadow-lg p-6 border border-gray-700">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+        <div className="auth-container max-w-full">
+          <h2 className="mb-6 flex items-center gap-2">
             <FaUserEdit className="text-primary" />
             Modifier mon profil
           </h2>
           
           {error && (
-            <div className="bg-red-900/30 border border-red-800 rounded-md p-4 mb-4 text-red-200">
+            <div className="form-message form-message-error">
               {error}
             </div>
           )}
           
           {success && (
-            <div className="bg-green-900/30 border border-green-800 rounded-md p-4 mb-4 text-green-200 flex items-center gap-2">
+            <div className="form-message form-message-success flex items-center gap-2">
               <FaCheck />
               {success}
             </div>
           )}
           
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="name" className="block text-white text-sm font-medium">Nom</label>
+          <form id="profile-form" onSubmit={handleSubmit(onSubmit)} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="name" className="form-label">Nom</label>
               <input
                 id="name"
                 type="text"
                 {...register('name')}
-                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="form-input"
               />
-              {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name.message}</p>}
+              {errors.name && <p className="form-error">{errors.name.message}</p>}
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-white text-sm font-medium">Email</label>
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">Email</label>
               <input
                 id="email"
                 type="email"
                 {...register('email')}
-                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="form-input"
               />
-              {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email.message}</p>}
+              {errors.email && <p className="form-error">{errors.email.message}</p>}
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="image" className="block text-white text-sm font-medium">URL de l'image de profil (optionnel)</label>
+            <div className="form-group">
+              <label htmlFor="image" className="form-label">URL de l'image de profil (optionnel)</label>
               <input
                 id="image"
-                type="text"
+                type="url"
                 {...register('image')}
-                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="https://exemple.com/photo.jpg"
+                className="form-input"
+                placeholder="https://exemple.com/image.jpg"
               />
-              {errors.image && <p className="text-red-400 text-sm mt-1">{errors.image.message}</p>}
+              {errors.image && <p className="form-error">{errors.image.message}</p>}
             </div>
             
             <button
               type="submit"
-              className="btn btn-primary"
+              className="auth-submit"
               disabled={updating}
             >
               {updating ? (
                 <span className="flex items-center gap-2">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <div className="loading-spinner w-5 h-5"></div>
                   Mise à jour...
                 </span>
               ) : (
-                'Mettre à jour le profil'
+                <span className="flex items-center gap-2">
+                  <FaSave />
+                  Mettre à jour le profil
+                </span>
               )}
             </button>
           </form>
         </div>
         
-        <div className="bg-dark-card-color rounded-lg shadow-lg p-6 border border-gray-700">
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+        <div className="auth-container max-w-full">
+          <h2 className="mb-6 flex items-center gap-2">
             <FaKey className="text-primary" />
             Changer de mot de passe
           </h2>
           
           {passwordError && (
-            <div className="bg-red-900/30 border border-red-800 rounded-md p-4 mb-4 text-red-200">
+            <div className="form-message form-message-error">
               {passwordError}
             </div>
           )}
           
           {passwordSuccess && (
-            <div className="bg-green-900/30 border border-green-800 rounded-md p-4 mb-4 text-green-200 flex items-center gap-2">
+            <div className="form-message form-message-success flex items-center gap-2">
               <FaCheck />
               {passwordSuccess}
             </div>
           )}
           
-          <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="currentPassword" className="block text-white text-sm font-medium">Mot de passe actuel</label>
+          <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="auth-form">
+            <div className="form-group">
+              <label htmlFor="currentPassword" className="form-label">Mot de passe actuel</label>
               <input
                 id="currentPassword"
                 type="password"
                 {...registerPassword('currentPassword')}
-                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="form-input"
               />
-              {passwordErrors.currentPassword && <p className="text-red-400 text-sm mt-1">{passwordErrors.currentPassword.message}</p>}
+              {passwordErrors.currentPassword && <p className="form-error">{passwordErrors.currentPassword.message}</p>}
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="newPassword" className="block text-white text-sm font-medium">Nouveau mot de passe</label>
+            <div className="form-group">
+              <label htmlFor="newPassword" className="form-label">Nouveau mot de passe</label>
               <input
                 id="newPassword"
                 type="password"
                 {...registerPassword('newPassword')}
-                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="form-input"
               />
-              {passwordErrors.newPassword && <p className="text-red-400 text-sm mt-1">{passwordErrors.newPassword.message}</p>}
+              {passwordErrors.newPassword && <p className="form-error">{passwordErrors.newPassword.message}</p>}
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="confirmPassword" className="block text-white text-sm font-medium">Confirmer le nouveau mot de passe</label>
+            <div className="form-group">
+              <label htmlFor="confirmPassword" className="form-label">Confirmer le mot de passe</label>
               <input
                 id="confirmPassword"
                 type="password"
                 {...registerPassword('confirmPassword')}
-                className="w-full px-4 py-3 bg-dark-light-color rounded-md border border-gray-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="form-input"
               />
-              {passwordErrors.confirmPassword && <p className="text-red-400 text-sm mt-1">{passwordErrors.confirmPassword.message}</p>}
+              {passwordErrors.confirmPassword && <p className="form-error">{passwordErrors.confirmPassword.message}</p>}
             </div>
             
             <button
               type="submit"
-              className="btn btn-primary"
+              className="auth-submit"
               disabled={changingPassword}
             >
               {changingPassword ? (
                 <span className="flex items-center gap-2">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Mise à jour...
+                  <div className="loading-spinner w-5 h-5"></div>
+                  Changement en cours...
                 </span>
               ) : (
-                'Changer le mot de passe'
+                <span className="flex items-center gap-2">
+                  <FaLock />
+                  Changer le mot de passe
+                </span>
               )}
             </button>
           </form>
         </div>
-      </div>
-      
-      <div className="mt-8 bg-dark-card-color rounded-lg shadow-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-          <FaSignOutAlt className="text-red-500" />
-          Se déconnecter
-        </h2>
-        <p className="mb-6">Vous souhaitez vous déconnecter de votre compte ?</p>
-        <button
-          onClick={handleLogout}
-          className="btn btn-danger"
-        >
-          Déconnexion
-        </button>
       </div>
     </div>
   );
