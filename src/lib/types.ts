@@ -31,6 +31,7 @@ export interface MediaContent {
   duration?: number; // En minutes pour les films
   createdAt: number;
   updatedAt: number;
+  progress?: number; // Pourcentage de visionnage (0-100)
 }
 
 // Types spécifiques pour les séries
