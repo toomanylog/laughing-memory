@@ -44,7 +44,7 @@ export default function Header() {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-dark shadow-lg' : 'bg-gradient-to-b from-dark to-transparent'
+      scrolled ? 'bg-[#151515] shadow-lg' : 'bg-gradient-to-b from-[#151515] to-transparent'
     }`}>
       <div className="container mx-auto flex justify-between items-center p-4">
         <div className="flex items-center">
@@ -103,14 +103,14 @@ export default function Header() {
               <div className="flex items-center gap-2">
                 {/* Débug: Affiche toujours le bouton admin pour tester */}
                 <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="rounded-full bg-dark-light hover:bg-dark-light/80">
-                    <FaCog className="mr-2 text-accent-yellow" />
+                  <Button variant="ghost" size="sm" className="rounded-full bg-[#222222] hover:bg-[#222222]/80">
+                    <FaCog className="mr-2 text-[#E8B221]" />
                     Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
                   </Button>
                 </Link>
                 <Link href="/profile">
-                  <Button variant="ghost" size="sm" className="rounded-full bg-dark-light hover:bg-dark-light/80">
-                    <FaUser className="mr-2 text-accent-blue" />
+                  <Button variant="ghost" size="sm" className="rounded-full bg-[#222222] hover:bg-[#222222]/80">
+                    <FaUser className="mr-2 text-[#2173E8]" />
                     {session.user.name || 'Profil'}
                   </Button>
                 </Link>
@@ -142,7 +142,7 @@ export default function Header() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="rounded-full bg-dark-light p-2"
+              className="rounded-full bg-[#222222] p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <FaTimes /> : <FaBars />}
@@ -153,7 +153,7 @@ export default function Header() {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-dark-light animate-fade-in">
+        <div className="md:hidden bg-[#222222] animate-fade-in">
           <div className="container mx-auto px-4 py-6 space-y-6">
             <div className="mb-4">
               <SearchBar />
@@ -211,7 +211,7 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Button className="btn-outline w-full justify-start">
-                      <FaCog className="mr-2 text-accent-yellow" />
+                      <FaCog className="mr-2 text-[#E8B221]" />
                       Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
                     </Button>
                   </Link>
@@ -220,7 +220,7 @@ export default function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Button className="btn-outline w-full justify-start">
-                      <FaUser className="mr-2 text-accent-blue" />
+                      <FaUser className="mr-2 text-[#2173E8]" />
                       {session.user.name || 'Profil'}
                     </Button>
                   </Link>

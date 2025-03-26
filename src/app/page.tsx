@@ -90,7 +90,7 @@ export default function Home() {
           }}
         >
           {/* Overlay de gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#151515] via-[#151515]/80 to-transparent"></div>
           
           <div className="container mx-auto px-4 h-full flex items-end pb-16 relative z-10">
             <div className="max-w-2xl">
@@ -98,10 +98,10 @@ export default function Home() {
                 <span className="bg-primary text-white text-sm px-3 py-1 rounded-full">
                   À la une
                 </span>
-                <span className="bg-dark-light text-white text-sm px-3 py-1 rounded-full">
+                <span className="bg-[#222222] text-white text-sm px-3 py-1 rounded-full">
                   {featuredContent.type === 'movie' ? 'Film' : 'Série'}
                 </span>
-                <div className="flex items-center text-accent-yellow">
+                <div className="flex items-center text-[#E8B221]">
                   <FaStar className="mr-1" />
                   <span>{featuredContent.releaseYear}</span>
                 </div>
@@ -138,7 +138,7 @@ export default function Home() {
       <section className="container mx-auto px-4 py-10">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold flex items-center">
-            <FaFire className="mr-2 text-accent-yellow" />
+            <FaFire className="mr-2 text-[#E8B221]" />
             Tendances
           </h2>
           <Link href="/search?category=trending" className="text-primary hover:text-primary/80 flex items-center">
@@ -157,7 +157,7 @@ export default function Home() {
       <section className="container mx-auto px-4 py-10">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold flex items-center">
-            <FaFilm className="mr-2 text-accent-blue" />
+            <FaFilm className="mr-2 text-[#2173E8]" />
             Films Populaires
           </h2>
           <Link href="/movies" className="text-primary hover:text-primary/80 flex items-center">
@@ -176,7 +176,7 @@ export default function Home() {
       <section className="container mx-auto px-4 py-10">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold flex items-center">
-            <FaTv className="mr-2 text-accent-green" />
+            <FaTv className="mr-2 text-[#3ECF8E]" />
             Séries Populaires
           </h2>
           <Link href="/series" className="text-primary hover:text-primary/80 flex items-center">

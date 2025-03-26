@@ -22,15 +22,15 @@ body {
 @layer components {
   /* Cards & Containers */
   .content-card {
-    @apply overflow-hidden rounded-card bg-dark-card shadow-card transition-all duration-300 hover:shadow-card-hover;
+    @apply overflow-hidden rounded-md bg-[#1E1E1E] shadow-md transition-all duration-300 hover:shadow-lg;
   }
   
   .media-card {
-    @apply relative overflow-hidden rounded-card shadow-card transition-all duration-300;
+    @apply relative overflow-hidden rounded-md shadow-md transition-all duration-300;
   }
   
   .media-card:hover {
-    @apply transform shadow-card-hover scale-105 z-10;
+    @apply transform shadow-lg scale-105 z-10;
   }
   
   .media-card:hover .media-overlay {
@@ -85,7 +85,7 @@ body {
   
   /* Navigation */
   .nav-link {
-    @apply text-light/80 hover:text-white transition-colors relative;
+    @apply text-white/80 hover:text-white transition-colors relative;
   }
   
   .nav-link::after {
@@ -107,7 +107,7 @@ body {
   
   /* Form Elements */
   .form-input {
-    @apply w-full px-3 py-2 bg-dark-light rounded-md border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply w-full px-3 py-2 bg-[#222222] rounded-md border border-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50;
   }
   
   .form-label {
@@ -120,7 +120,7 @@ body {
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-dark-light;
+    @apply bg-[#222222];
   }
   
   ::-webkit-scrollbar-thumb {
