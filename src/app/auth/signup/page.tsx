@@ -70,7 +70,7 @@ export default function SignUp() {
         password: data.password,
       });
       
-      router.push('/');
+      router.push(window.location.origin);
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('Cet email est déjà utilisé');

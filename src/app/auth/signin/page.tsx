@@ -41,7 +41,7 @@ export default function SignIn() {
       if (result?.error) {
         setError('Email ou mot de passe incorrect');
       } else {
-        router.push('/');
+        router.push(window.location.origin);
       }
     } catch (err) {
       setError('Une erreur est survenue lors de la connexion');

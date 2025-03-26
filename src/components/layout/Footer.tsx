@@ -1,14 +1,16 @@
 import Link from 'next/link';
 import { FaGithub, FaHeart, FaFacebook, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { useSession } from 'next-auth/react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { data: session } = useSession();
 
   return (
     <footer className="footer">
       <div className="container">
         <div className="footer-grid">
-          <div>
+          <div className="text-left">
             <Link href="/" className="logo mb-3">
               <span className="logo-primary">Lo</span>
               <span>kum</span>
@@ -27,9 +29,9 @@ export default function Footer() {
             </div>
           </div>
           
-          <div>
+          <div className="text-left">
             <h3 className="footer-title">Navigation</h3>
-            <nav className="flex flex-col">
+            <nav className="flex flex-col items-start">
               <Link href="/" className="footer-link">
                 Accueil
               </Link>
@@ -45,9 +47,9 @@ export default function Footer() {
             </nav>
           </div>
           
-          <div>
+          <div className="text-left">
             <h3 className="footer-title">Légal</h3>
-            <nav className="flex flex-col">
+            <nav className="flex flex-col items-start">
               <Link href="/privacy" className="footer-link">
                 Politique de confidentialité
               </Link>
@@ -60,14 +62,16 @@ export default function Footer() {
             </nav>
           </div>
           
-          <div>
+          <div className="text-left">
             <h3 className="footer-title">Communauté</h3>
             <p className="text-sm mb-3">
               Rejoignez notre communauté et restez informé des dernières nouveautés
             </p>
-            <Link href="/register" className="btn btn-primary btn-sm">
-              Inscrivez-vous
-            </Link>
+            {!session && (
+              <Link href="/auth/signup" className="btn btn-primary btn-sm">
+                Inscrivez-vous
+              </Link>
+            )}
           </div>
         </div>
         

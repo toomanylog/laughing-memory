@@ -721,11 +721,16 @@ nav {
   gap: 2rem;
 }
 
+.footer-grid nav {
+  align-items: flex-start;
+}
+
 .footer-title {
   color: white;
   font-weight: 600;
   margin-bottom: 1rem;
   font-size: 1.125rem;
+  text-align: left;
 }
 
 .footer-link {

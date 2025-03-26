@@ -45,6 +45,14 @@ export default function Header() {
     return pathname === path;
   };
 
+  const handleSignOut = () => {
+    signOut({ callbackUrl: window.location.origin });
+  };
+
+  const handleSignIn = () => {
+    signIn(undefined, { callbackUrl: window.location.origin });
+  };
+
   return (
     <header className={scrolled ? 'scrolled' : ''}>
       <div className="header-container">
@@ -114,7 +122,7 @@ export default function Header() {
                 </Link>
                 <button 
                   className="btn btn-sm btn-primary"
-                  onClick={() => signOut()}
+                  onClick={handleSignOut}
                 >
                   <FaSignOutAlt />
                   Déconnexion
@@ -123,7 +131,7 @@ export default function Header() {
             ) : (
               <button 
                 className="btn btn-sm btn-primary"
-                onClick={() => signIn()}
+                onClick={handleSignIn}
               >
                 <FaSignInAlt />
                 Connexion
@@ -210,7 +218,7 @@ export default function Header() {
                 <button 
                   className="btn btn-primary btn-sm full-width"
                   onClick={() => {
-                    signOut();
+                    handleSignOut();
                     setMobileMenuOpen(false);
                   }}
                 >
@@ -222,7 +230,7 @@ export default function Header() {
               <button 
                 className="btn btn-primary btn-sm full-width"
                 onClick={() => {
-                  signIn();
+                  handleSignIn();
                   setMobileMenuOpen(false);
                 }}
               >
