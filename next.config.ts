@@ -11,13 +11,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   // Configuration pour améliorer la compatibilité avec les composants qui utilisent useSession
-  serverExternalPackages: ["next-auth"],
-  
-  // Forcer le rendu côté client pour toutes les pages
-  output: 'export',
-  
-  // Remplacer le routage par défaut pour les pages exportées statiquement
-  trailingSlash: true,
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000", "*.netlify.app"]
+    },
+  },
 };
 
 export default nextConfig;
