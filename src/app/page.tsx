@@ -12,8 +12,8 @@ import { FaPlay, FaInfoCircle, FaChevronRight, FaSpinner, FaFire, FaFilm, FaTv, 
 export default function Home() {
   const [featuredContent, setFeaturedContent] = useState<MediaContent | null>(null);
   const [trendingContent, setTrendingContent] = useState<MediaContent[]>([]);
-  const [popularMovies, setPopularMovies] = useState<MediaContent[]>([]);
-  const [popularSeries, setPopularSeries] = useState<MediaContent[]>([]);
+  const [popularAnimes, setPopularAnimes] = useState<MediaContent[]>([]);
+  const [popularMangas, setPopularMangas] = useState<MediaContent[]>([]);
   const [newReleases, setNewReleases] = useState<MediaContent[]>([]);
   const [editorsPicks, setEditorsPicks] = useState<MediaContent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,17 +33,17 @@ export default function Home() {
           const randomIndex = Math.floor(Math.random() * allContent.length);
           setFeaturedContent(allContent[randomIndex]);
           
-          // Filtrer les films et les séries
-          const moviesData = allContent.filter(item => item.type === 'movie');
-          const seriesData = allContent.filter(item => item.type === 'series');
+          // Filtrer les animés et les mangas
+          const animesData = allContent.filter(item => item.type === 'movie');
+          const mangasData = allContent.filter(item => item.type === 'series');
           
           // Trier par date d'ajout (récent d'abord)
-          const sortedMovies = [...moviesData].sort((a, b) => b.createdAt - a.createdAt);
-          const sortedSeries = [...seriesData].sort((a, b) => b.createdAt - a.createdAt);
+          const sortedAnimes = [...animesData].sort((a, b) => b.createdAt - a.createdAt);
+          const sortedMangas = [...mangasData].sort((a, b) => b.createdAt - a.createdAt);
           
-          // Films et séries populaires (10 premiers)
-          setPopularMovies(sortedMovies.slice(0, 12));
-          setPopularSeries(sortedSeries.slice(0, 12));
+          // Animés et mangas populaires (12 premiers)
+          setPopularAnimes(sortedAnimes.slice(0, 12));
+          setPopularMangas(sortedMangas.slice(0, 12));
           
           // Contenu tendance (pseudo-algorithme basé sur dates récentes mélangées)
           const trending = [...allContent]
@@ -108,7 +108,7 @@ export default function Home() {
           />
           <div className="hero-banner-overlay">
             <div className="category-badge">
-              {featuredContent.type === 'movie' ? 'Film' : 'Série'}
+              {featuredContent.type === 'movie' ? 'Animé' : 'Manga'}
             </div>
             
             <h1 className="hero-title">{featuredContent.title}</h1>
@@ -223,40 +223,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Movies */}
+      {/* Popular Animes */}
       <section className="section-container">
         <div className="section-header">
           <h2 className="section-title">
             <FaFilm className="section-title-icon" />
-            Films Populaires
+            Animés Populaires
           </h2>
-          <Link href="/movies" className="view-all">
+          <Link href="/animes" className="view-all">
             Voir tout <FaChevronRight />
           </Link>
         </div>
         
         <div className="grid-cards">
-          {popularMovies.slice(0, 6).map(movie => (
-            <MediaCard key={movie.id} content={movie} />
+          {popularAnimes.slice(0, 6).map(anime => (
+            <MediaCard key={anime.id} content={anime} />
           ))}
         </div>
       </section>
       
-      {/* Popular Series */}
+      {/* Popular Mangas */}
       <section className="section-container">
         <div className="section-header">
           <h2 className="section-title">
             <FaTv className="section-title-icon" />
-            Séries Populaires
+            Mangas Populaires
           </h2>
-          <Link href="/series" className="view-all">
+          <Link href="/mangas" className="view-all">
             Voir tout <FaChevronRight />
           </Link>
         </div>
         
         <div className="grid-cards">
-          {popularSeries.slice(0, 6).map(serie => (
-            <MediaCard key={serie.id} content={serie} />
+          {popularMangas.slice(0, 6).map(manga => (
+            <MediaCard key={manga.id} content={manga} />
           ))}
         </div>
       </section>
@@ -267,17 +267,17 @@ export default function Home() {
           <div className="footer-grid">
             <div>
               <h3 className="logo">
-                <span className="logo-primary">Stream</span>Flix
+                <span className="logo-primary">Lo</span>kum
               </h3>
               <p className="footer-description">
-                La plateforme de streaming qui vous offre le meilleur des films et séries.
+                La plateforme de streaming qui vous offre le meilleur des animés et mangas.
               </p>
             </div>
             
             <div>
               <h4 className="footer-title">Explorer</h4>
-              <Link href="/movies" className="footer-link">Films</Link>
-              <Link href="/series" className="footer-link">Séries</Link>
+              <Link href="/animes" className="footer-link">Animés</Link>
+              <Link href="/mangas" className="footer-link">Mangas</Link>
               <Link href="/search?category=trending" className="footer-link">Tendances</Link>
               <Link href="/search?category=new" className="footer-link">Nouveautés</Link>
             </div>
@@ -300,7 +300,7 @@ export default function Home() {
           </div>
           
           <div className="footer-copyright">
-            &copy; {new Date().getFullYear()} StreamFlix. Tous droits réservés.
+            &copy; {new Date().getFullYear()} Lokum. Tous droits réservés.
           </div>
         </div>
       </footer>

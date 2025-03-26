@@ -45,8 +45,8 @@ export default function Header() {
       <div className="header-container">
         <div className="nav-container">
           <Link href="/" className="logo">
-            <span className="logo-primary">Stream</span>
-            <span>Flix</span>
+            <span className="logo-primary">Lo</span>
+            <span>kum</span>
           </Link>
 
           <nav>
@@ -58,18 +58,18 @@ export default function Header() {
               Accueil
             </Link>
             <Link 
-              href="/movies" 
-              className={`nav-link ${isActive('/movies') ? 'active' : ''}`}
+              href="/animes" 
+              className={`nav-link ${isActive('/animes') ? 'active' : ''}`}
             >
-              <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
-              Films
+              <FaFilm className={isActive('/animes') ? 'text-primary' : ''} />
+              Animés
             </Link>
             <Link 
-              href="/series" 
-              className={`nav-link ${isActive('/series') ? 'active' : ''}`}
+              href="/mangas" 
+              className={`nav-link ${isActive('/mangas') ? 'active' : ''}`}
             >
-              <FaTv className={isActive('/series') ? 'text-primary' : ''} />
-              Séries
+              <FaTv className={isActive('/mangas') ? 'text-primary' : ''} />
+              Mangas
             </Link>
             <Link 
               href="/favorites" 
@@ -85,7 +85,7 @@ export default function Header() {
           <div className="search-container">
             <input
               type="text"
-              placeholder="Rechercher des films, séries..."
+              placeholder="Rechercher des animés, mangas..."
               className="search-input"
             />
             <FaSearch className="search-icon" />
@@ -143,7 +143,7 @@ export default function Header() {
             <div className="mobile-search">
               <input
                 type="text"
-                placeholder="Rechercher des films, séries..."
+                placeholder="Rechercher des animés, mangas..."
                 className="search-input"
               />
               <FaSearch className="search-icon" />
@@ -159,20 +159,20 @@ export default function Header() {
                 Accueil
               </Link>
               <Link 
-                href="/movies" 
-                className={`mobile-nav-link ${isActive('/movies') ? 'active' : ''}`}
+                href="/animes" 
+                className={`mobile-nav-link ${isActive('/animes') ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
-                Films
+                <FaFilm className={isActive('/animes') ? 'text-primary' : ''} />
+                Animés
               </Link>
               <Link 
-                href="/series" 
-                className={`mobile-nav-link ${isActive('/series') ? 'active' : ''}`}
+                href="/mangas" 
+                className={`mobile-nav-link ${isActive('/mangas') ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <FaTv className={isActive('/series') ? 'text-primary' : ''} />
-                Séries
+                <FaTv className={isActive('/mangas') ? 'text-primary' : ''} />
+                Mangas
               </Link>
               <Link 
                 href="/favorites" 

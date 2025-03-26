@@ -8,8 +8,8 @@ import Footer from '@/components/layout/Footer';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'StreamFlix - Votre plateforme de streaming gratuite',
-  description: 'Regardez des films et séries en streaming gratuitement sans limite',
+  title: 'Lokum - Votre plateforme d\'animés en streaming',
+  description: 'Découvrez et regardez vos animés et mangas préférés en streaming gratuitement',
 };
 
 export default function RootLayout({

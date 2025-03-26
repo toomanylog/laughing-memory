@@ -39,7 +39,7 @@ export default function MediaCard({ content, isFeatured = false }: MediaCardProp
           </div>
           
           <div className="media-badge badge-type">
-            {content.type === 'movie' ? 'Film' : 'Série'}
+            {content.type === 'movie' ? 'Animé' : 'Manga'}
           </div>
           
           {/* Overlay avec dégradé */}

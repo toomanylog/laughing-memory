@@ -10,9 +10,9 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
             <Link href="/" className="text-xl font-bold text-white hover:text-primary transition-colors">
-              StreamFlix
+              Lokum
             </Link>
-            <p className="mt-2 text-sm">Votre plateforme de streaming gratuite</p>
+            <p className="mt-2 text-sm">Votre plateforme d'animés en streaming</p>
           </div>
           
           <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-8">
@@ -21,11 +21,11 @@ export default function Footer() {
               <Link href="/" className="text-sm hover:text-white transition-colors">
                 Accueil
               </Link>
-              <Link href="/movies" className="text-sm hover:text-white transition-colors">
-                Films
+              <Link href="/animes" className="text-sm hover:text-white transition-colors">
+                Animés
               </Link>
-              <Link href="/series" className="text-sm hover:text-white transition-colors">
-                Séries
+              <Link href="/mangas" className="text-sm hover:text-white transition-colors">
+                Mangas
               </Link>
             </nav>
             
@@ -41,16 +41,17 @@ export default function Footer() {
           </div>
         </div>
         
-        <div className="mt-8 pt-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm">© {currentYear} StreamFlix. Tous droits réservés.</p>
-          <div className="mt-4 md:mt-0 flex items-center">
+        <div className="mt-8 pt-4 border-t border-gray-800 text-center text-xs">
+          <p>&copy; {currentYear} Lokum. Tous droits réservés.</p>
+          <div className="mt-2 flex justify-center">
             <a 
-              href="https://github.com/toomanylog/laughing-memory" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              href="https://github.com/toomanylog" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-gray-400 hover:text-white transition-colors flex items-center"
             >
-              <FaGithub size={20} />
+              <FaGithub className="mr-2" />
+              <span>GitHub</span>
             </a>
           </div>
         </div>
