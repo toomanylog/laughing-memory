@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { FaGithub, FaHeart, FaFacebook, FaTwitter, FaInstagram } from 'react-icons/fa';
 import { useSession } from 'next-auth/react';

@@ -11,9 +11,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   // Configuration pour améliorer la compatibilité avec les composants qui utilisent useSession
-  experimental: {
-    serverComponentsExternalPackages: ["next-auth"],
-  },
+  serverExternalPackages: ["next-auth"],
 };
 
 export default nextConfig;
