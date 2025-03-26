@@ -2,9 +2,7 @@
 
 import Link from 'next/link';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import { Button } from '@/components/ui/Button';
-import { FaUser, FaSignOutAlt, FaSignInAlt, FaCog, FaBars, FaTimes, FaHome, FaFilm, FaTv, FaHeart } from 'react-icons/fa';
-import SearchBar from '@/components/SearchBar';
+import { FaUser, FaSignOutAlt, FaSignInAlt, FaCog, FaBars, FaTimes, FaHome, FaFilm, FaTv, FaHeart, FaSearch } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -43,166 +41,150 @@ export default function Header() {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled ? 'bg-[#151515] shadow-lg' : 'bg-gradient-to-b from-[#151515] to-transparent'
-    }`}>
-      <div className="container mx-auto flex justify-between items-center p-4">
-        <div className="flex items-center">
-          <Link href="/" className="text-2xl font-bold mr-8">
-            <span className="text-primary">Stream</span>
-            <span className="text-white">Flix</span>
+    <header className={scrolled ? 'scrolled' : ''}>
+      <div className="header-container">
+        <div className="nav-container">
+          <Link href="/" className="logo">
+            <span className="logo-primary">Stream</span>
+            <span>Flix</span>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav>
             <Link 
               href="/" 
               className={`nav-link ${isActive('/') ? 'active' : ''}`}
             >
-              <span className="flex items-center gap-2">
-                <FaHome className={isActive('/') ? 'text-primary' : ''} />
-                Accueil
-              </span>
+              <FaHome className={isActive('/') ? 'text-primary' : ''} />
+              Accueil
             </Link>
             <Link 
               href="/movies" 
               className={`nav-link ${isActive('/movies') ? 'active' : ''}`}
             >
-              <span className="flex items-center gap-2">
-                <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
-                Films
-              </span>
+              <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
+              Films
             </Link>
             <Link 
               href="/series" 
               className={`nav-link ${isActive('/series') ? 'active' : ''}`}
             >
-              <span className="flex items-center gap-2">
-                <FaTv className={isActive('/series') ? 'text-primary' : ''} />
-                Séries
-              </span>
+              <FaTv className={isActive('/series') ? 'text-primary' : ''} />
+              Séries
             </Link>
             <Link 
               href="/favorites" 
               className={`nav-link ${isActive('/favorites') ? 'active' : ''}`}
             >
-              <span className="flex items-center gap-2">
-                <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
-                Favoris
-              </span>
+              <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
+              Favoris
             </Link>
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden md:block">
-            <SearchBar />
+        <div className="header-actions">
+          <div className="search-container">
+            <input
+              type="text"
+              placeholder="Rechercher des films, séries..."
+              className="search-input"
+            />
+            <FaSearch className="search-icon" />
           </div>
 
-          <div className="hidden md:flex items-center">
+          <div className="user-actions">
             {session ? (
-              <div className="flex items-center gap-2">
-                {/* Débug: Affiche toujours le bouton admin pour tester */}
+              <div className="flex gap-2">
+                {/* Affiche toujours le bouton admin pour tester */}
                 <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="rounded bg-[#222222] hover:bg-[#222222]/80">
-                    <FaCog className="mr-2 text-[#E8B221]" />
+                  <button className="btn btn-sm btn-ghost">
+                    <FaCog className="text-primary" />
                     Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
-                  </Button>
+                  </button>
                 </Link>
                 <Link href="/profile">
-                  <Button variant="ghost" size="sm" className="rounded bg-[#222222] hover:bg-[#222222]/80">
-                    <FaUser className="mr-2 text-[#2173E8]" />
+                  <button className="btn btn-sm btn-ghost">
+                    <FaUser className="text-primary" />
                     {session.user.name || 'Profil'}
-                  </Button>
+                  </button>
                 </Link>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="rounded bg-primary hover:bg-primary/80"
+                <button 
+                  className="btn btn-sm btn-primary"
                   onClick={() => signOut()}
                 >
-                  <FaSignOutAlt className="mr-2" />
+                  <FaSignOutAlt />
                   Déconnexion
-                </Button>
+                </button>
               </div>
             ) : (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="rounded bg-primary hover:bg-primary/80 text-white"
+              <button 
+                className="btn btn-sm btn-primary"
                 onClick={() => signIn()}
               >
-                <FaSignInAlt className="mr-2" />
+                <FaSignInAlt />
                 Connexion
-              </Button>
+              </button>
             )}
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded bg-[#222222] p-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-            </Button>
-          </div>
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <FaTimes /> : <FaBars />}
+          </button>
         </div>
       </div>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#222222] animate-fade-in">
-          <div className="container mx-auto px-4 py-6 space-y-6">
-            <div className="mb-4">
-              <SearchBar />
+        <div className="mobile-menu animate-fade-in">
+          <div className="mobile-menu-container">
+            <div className="mobile-search">
+              <input
+                type="text"
+                placeholder="Rechercher des films, séries..."
+                className="search-input"
+              />
+              <FaSearch className="search-icon" />
             </div>
             
-            <nav className="flex flex-col space-y-4">
+            <nav className="mobile-nav">
               <Link 
                 href="/" 
-                className={`text-lg font-medium ${isActive('/') ? 'text-primary' : 'text-white'}`}
+                className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="flex items-center gap-2">
-                  <FaHome className={isActive('/') ? 'text-primary' : ''} />
-                  Accueil
-                </span>
+                <FaHome className={isActive('/') ? 'text-primary' : ''} />
+                Accueil
               </Link>
               <Link 
                 href="/movies" 
-                className={`text-lg font-medium ${isActive('/movies') ? 'text-primary' : 'text-white'}`}
+                className={`mobile-nav-link ${isActive('/movies') ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="flex items-center gap-2">
-                  <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
-                  Films
-                </span>
+                <FaFilm className={isActive('/movies') ? 'text-primary' : ''} />
+                Films
               </Link>
               <Link 
                 href="/series" 
-                className={`text-lg font-medium ${isActive('/series') ? 'text-primary' : 'text-white'}`}
+                className={`mobile-nav-link ${isActive('/series') ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="flex items-center gap-2">
-                  <FaTv className={isActive('/series') ? 'text-primary' : ''} />
-                  Séries
-                </span>
+                <FaTv className={isActive('/series') ? 'text-primary' : ''} />
+                Séries
               </Link>
               <Link 
                 href="/favorites" 
-                className={`text-lg font-medium ${isActive('/favorites') ? 'text-primary' : 'text-white'}`}
+                className={`mobile-nav-link ${isActive('/favorites') ? 'active' : ''}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <span className="flex items-center gap-2">
-                  <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
-                  Favoris
-                </span>
+                <FaHeart className={isActive('/favorites') ? 'text-primary' : ''} />
+                Favoris
               </Link>
             </nav>
             
-            <div className="pt-4 border-t border-gray-700 flex flex-col space-y-3">
+            <div className="mobile-user-actions">
               {session ? (
                 <>
                   {/* Version mobile: aussi ajouter accès admin */}
@@ -210,42 +192,42 @@ export default function Header() {
                     href="/admin"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Button className="btn-outline w-full justify-start">
-                      <FaCog className="mr-2 text-[#E8B221]" />
+                    <button className="btn btn-ghost btn-sm full-width">
+                      <FaCog className="text-primary" />
                       Admin {isAdminUser ? '(Activé)' : '(Inactif)'}
-                    </Button>
+                    </button>
                   </Link>
                   <Link 
                     href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <Button className="btn-outline w-full justify-start">
-                      <FaUser className="mr-2 text-[#2173E8]" />
+                    <button className="btn btn-ghost btn-sm full-width">
+                      <FaUser className="text-primary" />
                       {session.user.name || 'Profil'}
-                    </Button>
+                    </button>
                   </Link>
-                  <Button 
-                    className="btn-primary w-full justify-start"
+                  <button 
+                    className="btn btn-primary btn-sm full-width"
                     onClick={() => {
                       signOut();
                       setMobileMenuOpen(false);
                     }}
                   >
-                    <FaSignOutAlt className="mr-2" />
+                    <FaSignOutAlt />
                     Déconnexion
-                  </Button>
+                  </button>
                 </>
               ) : (
-                <Button 
-                  className="btn-primary w-full justify-start"
+                <button 
+                  className="btn btn-primary btn-sm full-width"
                   onClick={() => {
                     signIn();
                     setMobileMenuOpen(false);
                   }}
                 >
-                  <FaSignInAlt className="mr-2" />
+                  <FaSignInAlt />
                   Connexion
-                </Button>
+                </button>
               )}
             </div>
           </div>

@@ -1,19 +1,21 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ref, get, query, orderByChild, limitToLast } from 'firebase/database';
+import { ref, get } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import Image from 'next/image';
 import MediaCard from '@/components/MediaCard';
 import { MediaContent } from '@/lib/types';
-import { FaPlay, FaInfoCircle, FaChevronRight, FaSpinner, FaFire, FaFilm, FaTv, FaStar } from 'react-icons/fa';
+import { FaPlay, FaInfoCircle, FaChevronRight, FaSpinner, FaFire, FaFilm, FaTv, FaStar, FaEye, FaClock, FaCalendarAlt } from 'react-icons/fa';
 
 export default function Home() {
   const [featuredContent, setFeaturedContent] = useState<MediaContent | null>(null);
   const [trendingContent, setTrendingContent] = useState<MediaContent[]>([]);
-  const [movies, setMovies] = useState<MediaContent[]>([]);
-  const [series, setSeries] = useState<MediaContent[]>([]);
+  const [popularMovies, setPopularMovies] = useState<MediaContent[]>([]);
+  const [popularSeries, setPopularSeries] = useState<MediaContent[]>([]);
+  const [newReleases, setNewReleases] = useState<MediaContent[]>([]);
+  const [editorsPicks, setEditorsPicks] = useState<MediaContent[]>([]);
   const [loading, setLoading] = useState(true);
   const featuredRef = useRef<HTMLDivElement>(null);
 
@@ -39,13 +41,27 @@ export default function Home() {
           const sortedMovies = [...moviesData].sort((a, b) => b.createdAt - a.createdAt);
           const sortedSeries = [...seriesData].sort((a, b) => b.createdAt - a.createdAt);
           
-          // Prendre les 10 premiers
-          setMovies(sortedMovies.slice(0, 10));
-          setSeries(sortedSeries.slice(0, 10));
+          // Films et séries populaires (10 premiers)
+          setPopularMovies(sortedMovies.slice(0, 12));
+          setPopularSeries(sortedSeries.slice(0, 12));
           
-          // Contenu tendance (on pourrait ajouter une logique plus sophistiquée ici)
-          const trending = [...allContent].sort(() => 0.5 - Math.random()).slice(0, 6);
+          // Contenu tendance (pseudo-algorithme basé sur dates récentes mélangées)
+          const trending = [...allContent]
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 20)
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 6);
           setTrendingContent(trending);
+          
+          // Nouveautés (ajoutées récemment)
+          setNewReleases(allContent
+            .sort((a, b) => b.createdAt - a.createdAt)
+            .slice(0, 6));
+          
+          // Choix de l'éditeur (sélection aléatoire pour la démo)
+          setEditorsPicks([...allContent]
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 6));
         }
       } catch (error) {
         console.error('Error fetching content:', error);
@@ -72,124 +88,222 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <FaSpinner className="animate-spin text-4xl text-primary" />
+      <div className="loading-container">
+        <FaSpinner className="loading-spinner" />
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen pb-20">
-      {/* Section héro - Film/Série en vedette */}
+    <main>
+      {/* Hero Banner - Featured Content */}
       {featuredContent && (
-        <div 
-          ref={featuredRef}
-          className="relative h-[80vh] bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${featuredContent.backdropUrl || featuredContent.posterUrl})`,
-          }}
-        >
-          {/* Overlay de gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#151515] via-[#151515]/80 to-transparent"></div>
-          
-          <div className="container mx-auto px-4 h-full flex items-end pb-16 relative z-10">
-            <div className="max-w-2xl">
-              <div className="flex items-center mb-4 space-x-3">
-                <span className="bg-primary text-white text-sm px-3 py-1 rounded">
-                  À la une
-                </span>
-                <span className="bg-[#222222] text-white text-sm px-3 py-1 rounded">
-                  {featuredContent.type === 'movie' ? 'Film' : 'Série'}
-                </span>
-                <div className="flex items-center text-[#E8B221]">
-                  <FaStar className="mr-1" />
-                  <span>{featuredContent.releaseYear}</span>
-                </div>
+        <div className="hero-banner">
+          <Image
+            src={featuredContent.backdropUrl || featuredContent.posterUrl}
+            alt={featuredContent.title}
+            fill
+            priority
+            className="hero-banner-image"
+          />
+          <div className="hero-banner-overlay">
+            <div className="category-badge">
+              {featuredContent.type === 'movie' ? 'Film' : 'Série'}
+            </div>
+            
+            <h1 className="hero-title">{featuredContent.title}</h1>
+            
+            <p className="hero-description">
+              {featuredContent.description.length > 200
+                ? `${featuredContent.description.substring(0, 200)}...`
+                : featuredContent.description}
+            </p>
+            
+            <div className="hero-stats">
+              <div className="hero-stat">
+                <FaStar className="hero-stat-icon" />
+                {featuredContent.releaseYear}
               </div>
               
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-md">
-                {featuredContent.title}
-              </h1>
-              
-              <p className="text-gray-200 mb-6 line-clamp-2 md:line-clamp-3 drop-shadow-md">
-                {featuredContent.description}
-              </p>
-              
-              <div className="space-x-4 flex">
-                <Link href={`/${featuredContent.type}/${featuredContent.id}`}>
-                  <button className="btn-primary flex items-center">
-                    <FaPlay className="mr-2" />
-                    Regarder
-                  </button>
-                </Link>
-                <Link href={`/${featuredContent.type}/${featuredContent.id}`}>
-                  <button className="btn-outline flex items-center">
-                    <FaInfoCircle className="mr-2" />
-                    Plus d'infos
-                  </button>
-                </Link>
+              <div className="hero-stat">
+                <FaClock className="hero-stat-icon" />
+                {featuredContent.duration ? `${Math.floor(featuredContent.duration / 60)}h${featuredContent.duration % 60}m` : 'Multiple épisodes'}
               </div>
+              
+              <div className="hero-stat">
+                <FaCalendarAlt className="hero-stat-icon" />
+                Ajouté le {new Date(featuredContent.createdAt).toLocaleDateString('fr-FR')}
+              </div>
+            </div>
+            
+            <div className="hero-actions">
+              <Link href={`/${featuredContent.type}/${featuredContent.id}`} className="btn btn-primary">
+                <FaPlay />
+                Regarder maintenant
+              </Link>
+              
+              <Link href={`/${featuredContent.type}/${featuredContent.id}`} className="btn btn-outline">
+                <FaInfoCircle />
+                Plus d'infos
+              </Link>
             </div>
           </div>
         </div>
       )}
-      
-      {/* Section Tendances */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold flex items-center">
-            <FaFire className="mr-2 text-[#E8B221]" />
-            Tendances
+
+      {/* Trending Content - Top Picks */}
+      <section className="featured-section">
+        <div className="section-container">
+          <div className="section-header">
+            <h2 className="section-title">
+              <FaFire className="section-title-icon" />
+              Trending maintenant
+            </h2>
+            
+            <Link href="/search?category=trending" className="view-all">
+              Voir tout <FaChevronRight />
+            </Link>
+          </div>
+          
+          <div className="grid-cards">
+            {trendingContent.map(content => (
+              <div key={content.id} className="card-container">
+                <div className="trending-badge">
+                  <FaFire />
+                  Trending
+                </div>
+                <MediaCard content={content} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* New Releases */}
+      <section className="section-container">
+        <div className="section-header">
+          <h2 className="section-title">
+            <FaCalendarAlt className="section-title-icon" />
+            Nouveautés
           </h2>
-          <Link href="/search?category=trending" className="text-primary hover:text-primary/80 flex items-center">
-            Voir tout <FaChevronRight className="ml-1" />
+          <Link href="/search?category=new" className="view-all">
+            Voir tout <FaChevronRight />
           </Link>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {trendingContent.map(content => (
+        <div className="grid-cards">
+          {newReleases.map(content => (
             <MediaCard key={content.id} content={content} />
           ))}
         </div>
       </section>
       
-      {/* Section Films */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold flex items-center">
-            <FaFilm className="mr-2 text-[#2173E8]" />
-            Films Populaires
+      {/* Editor's Picks */}
+      <section className="section-container">
+        <div className="section-header">
+          <h2 className="section-title">
+            <FaStar className="section-title-icon" />
+            Choix de l'éditeur
           </h2>
-          <Link href="/movies" className="text-primary hover:text-primary/80 flex items-center">
-            Voir tout <FaChevronRight className="ml-1" />
+          <Link href="/search?category=editors-picks" className="view-all">
+            Voir tout <FaChevronRight />
           </Link>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {movies.slice(0, 5).map(movie => (
+        <div className="grid-cards">
+          {editorsPicks.map(content => (
+            <div key={content.id} className="card-container">
+              <div className="trending-badge" style={{backgroundColor: 'var(--accent-yellow)'}}>
+                <FaStar style={{color: 'black'}} />
+                Choix éditeur
+              </div>
+              <MediaCard content={content} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Popular Movies */}
+      <section className="section-container">
+        <div className="section-header">
+          <h2 className="section-title">
+            <FaFilm className="section-title-icon" />
+            Films Populaires
+          </h2>
+          <Link href="/movies" className="view-all">
+            Voir tout <FaChevronRight />
+          </Link>
+        </div>
+        
+        <div className="grid-cards">
+          {popularMovies.slice(0, 6).map(movie => (
             <MediaCard key={movie.id} content={movie} />
           ))}
         </div>
       </section>
       
-      {/* Section Séries */}
-      <section className="container mx-auto px-4 py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold flex items-center">
-            <FaTv className="mr-2 text-[#3ECF8E]" />
+      {/* Popular Series */}
+      <section className="section-container">
+        <div className="section-header">
+          <h2 className="section-title">
+            <FaTv className="section-title-icon" />
             Séries Populaires
           </h2>
-          <Link href="/series" className="text-primary hover:text-primary/80 flex items-center">
-            Voir tout <FaChevronRight className="ml-1" />
+          <Link href="/series" className="view-all">
+            Voir tout <FaChevronRight />
           </Link>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {series.slice(0, 5).map(serie => (
+        <div className="grid-cards">
+          {popularSeries.slice(0, 6).map(serie => (
             <MediaCard key={serie.id} content={serie} />
           ))}
         </div>
       </section>
+      
+      {/* Footer */}
+      <footer className="footer">
+        <div className="section-container">
+          <div className="footer-grid">
+            <div>
+              <h3 className="logo">
+                <span className="logo-primary">Stream</span>Flix
+              </h3>
+              <p className="footer-description">
+                La plateforme de streaming qui vous offre le meilleur des films et séries.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="footer-title">Explorer</h4>
+              <Link href="/movies" className="footer-link">Films</Link>
+              <Link href="/series" className="footer-link">Séries</Link>
+              <Link href="/search?category=trending" className="footer-link">Tendances</Link>
+              <Link href="/search?category=new" className="footer-link">Nouveautés</Link>
+            </div>
+            
+            <div>
+              <h4 className="footer-title">Mon compte</h4>
+              <Link href="/profile" className="footer-link">Profil</Link>
+              <Link href="/favorites" className="footer-link">Favoris</Link>
+              <Link href="/auth/signin" className="footer-link">Connexion</Link>
+              <Link href="/auth/signup" className="footer-link">Inscription</Link>
+            </div>
+            
+            <div>
+              <h4 className="footer-title">Aide</h4>
+              <Link href="/terms" className="footer-link">Conditions d'utilisation</Link>
+              <Link href="/privacy" className="footer-link">Politique de confidentialité</Link>
+              <Link href="/contact" className="footer-link">Contactez-nous</Link>
+              <Link href="/faq" className="footer-link">FAQ</Link>
+            </div>
+          </div>
+          
+          <div className="footer-copyright">
+            &copy; {new Date().getFullYear()} StreamFlix. Tous droits réservés.
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

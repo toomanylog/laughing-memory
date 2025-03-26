@@ -1,7 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { cn } from '@/lib/utils';
 import { NextAuthProvider } from '@/providers/NextAuthProvider';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -20,14 +19,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={cn(
-        inter.className,
-        'min-h-screen bg-gradient-to-b from-gray-900 to-black text-white'
-      )}>
+      <body className={inter.className}>
         <NextAuthProvider>
-          <div className="flex flex-col min-h-screen">
+          <div className="app-container">
             <Header />
-            <main className="flex-grow">{children}</main>
+            <main>{children}</main>
             <Footer />
           </div>
         </NextAuthProvider>

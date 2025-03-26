@@ -1,7 +1,7 @@
 import { MediaContent } from '@/lib/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaPlay, FaHeart, FaStar, FaEye } from 'react-icons/fa';
+import { FaPlay, FaHeart, FaStar, FaEye, FaClock, FaCalendarAlt } from 'react-icons/fa';
 import { useState } from 'react';
 
 interface MediaCardProps {
@@ -10,73 +10,96 @@ interface MediaCardProps {
 }
 
 export default function MediaCard({ content, isFeatured = false }: MediaCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsLiked(!isLiked);
+    // Ici, vous pourriez implémenter la logique pour sauvegarder l'état de favoris
+  };
 
   return (
-    <div 
-      className={`relative overflow-hidden transition-all duration-300 card-media transform ${
-        isHovered ? 'scale-105 shadow-glow' : ''
-      }`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="media-card">
       <Link href={`/${content.type}/${content.id}`}>
-        <div className="relative aspect-[2/3] w-full">
-          {/* Image avec overlay */}
+        <div className="media-poster">
+          {/* Image principale */}
           <Image
             src={content.posterUrl || '/images/placeholder.jpg'}
             alt={content.title}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover rounded"
+            className="object-cover"
             priority={isFeatured}
           />
           
-          {/* Overlay de gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-t from-[#222222] via-transparent to-transparent opacity-100 transition-opacity duration-300 ${
-            isHovered ? 'via-black/50' : ''
-          }`}></div>
+          {/* Badges */}
+          <div className="media-badge badge-quality">
+            <span>HD</span>
+          </div>
           
-          {/* Badge de type (Film/Série) */}
-          <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded">
+          <div className="media-badge badge-type">
             {content.type === 'movie' ? 'Film' : 'Série'}
           </div>
           
-          {/* Notation */}
-          <div className="absolute top-2 right-2 bg-[#222222]/80 text-[#E8B221] text-xs px-2 py-1 rounded flex items-center">
-            <FaStar className="mr-1" />
-            {content.duration ? `${Math.floor(content.duration / 60)}h${content.duration % 60}` : ''}
-          </div>
+          {/* Overlay avec dégradé */}
+          <div className="media-gradient"></div>
           
-          {/* Contenu au survol */}
-          <div className={`absolute inset-0 flex flex-col justify-end p-3 transition-all duration-300 ${
-            isHovered ? 'opacity-100' : 'opacity-100'
-          }`}>
-            <h3 className="text-white font-bold text-sm md:text-base truncate mb-1">
+          {/* Contenu de la carte */}
+          <div className="media-content">
+            <h3 className="media-title">
               {content.title}
             </h3>
             
-            <div className="flex justify-between items-center text-xs text-gray-300 mb-2">
-              <span>{content.releaseYear}</span>
-              <div className="flex items-center">
-                <span className="bg-[#222222] px-2 py-0.5 rounded text-xs">
-                  {content.genres.length > 0 ? content.genres[0] : ''}
+            <div className="media-info">
+              <span className="media-meta">
+                <FaCalendarAlt className="media-meta-icon" />
+                {content.releaseYear}
+              </span>
+              
+              {content.duration && (
+                <span className="media-meta">
+                  <FaClock className="media-meta-icon" />
+                  {Math.floor(content.duration / 60)}h{content.duration % 60}
                 </span>
-              </div>
+              )}
             </div>
             
-            {/* Boutons d'action (visibles au survol) */}
-            <div className={`flex gap-2 transition-all duration-300 transform ${
-              isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-            }`}>
-              <button className="flex-1 btn-primary-sm flex items-center justify-center">
-                <FaPlay className="mr-1" />
+            {/* Genres */}
+            <div className="media-genres">
+              {content.genres.slice(0, 2).map(genre => (
+                <span 
+                  key={genre} 
+                  className="genre-tag"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+            
+            {/* Boutons d'action */}
+            <div className="media-actions">
+              <Link 
+                href={`/${content.type}/${content.id}`}
+                className="btn btn-primary btn-sm"
+              >
+                <FaPlay />
                 Regarder
-              </button>
-              <button className="btn-outline-sm p-2 rounded flex items-center justify-center">
-                <FaHeart />
+              </Link>
+              
+              <button 
+                className={`btn btn-outline btn-sm ${isLiked ? 'text-primary' : ''}`}
+                onClick={handleLike}
+                aria-label={isLiked ? "Retirer des favoris" : "Ajouter aux favoris"}
+              >
+                <FaHeart className={isLiked ? "text-primary" : ""} />
               </button>
             </div>
+          </div>
+          
+          {/* Barre de progression */}
+          <div className="media-progress">
+            <div className="progress-bar" style={{width: `${content.progress || 0}%`}}></div>
           </div>
         </div>
       </Link>
