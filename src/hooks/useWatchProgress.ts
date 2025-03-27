@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ref, set, get } from 'firebase/database';
 import { db } from '../firebase.ts';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from './useAuth.ts';
 import { UserProgress } from '../types/index.ts';
 
 // Clé pour stocker la progression localement
