@@ -86,6 +86,7 @@ interface Cache {
   byType: Record<string, Content[]>;
   lastFetch: number;
   initialFetchDone: boolean;
+  fetchInProgress: boolean;
 }
 
 export const useContent = () => {
@@ -98,19 +99,25 @@ export const useContent = () => {
     byId: {},
     byType: {},
     lastFetch: 0,
-    initialFetchDone: false
+    initialFetchDone: false,
+    fetchInProgress: false
   });
   
   // Valider si le cache est encore frais
   const isCacheFresh = (type: 'byId' | 'byType', key?: string) => {
+    // Si une requête est déjà en cours, utiliser le cache existant
+    if (cacheRef.current.fetchInProgress) {
+      return true;
+    }
+    
     // Si le chargement initial n'a pas encore été fait, ne pas utiliser le cache
     if (!cacheRef.current.initialFetchDone) {
       console.log("Chargement initial pas encore effectué, cache non utilisé");
       return false;
     }
     
-    // Si le cache a moins de 15 secondes, l'utiliser
-    const isFresh = (Date.now() - cacheRef.current.lastFetch) < 15000;
+    // Si le cache a moins de 30 secondes, l'utiliser
+    const isFresh = (Date.now() - cacheRef.current.lastFetch) < 30000;
     
     // Vérifier que les données sont présentes dans le cache
     if (type === 'byId' && key) {
@@ -118,7 +125,7 @@ export const useContent = () => {
     }
     
     if (type === 'byType' && key) {
-      return isFresh && Array.isArray(cacheRef.current.byType[key]) && cacheRef.current.byType[key].length > 0;
+      return isFresh && Array.isArray(cacheRef.current.byType[key]);
     }
     
     return isFresh;
@@ -131,19 +138,36 @@ export const useContent = () => {
     
     console.log("useEffect de useContent exécuté - Chargement des contenus");
     
+    // Si une requête est déjà en cours, ne pas en lancer une nouvelle
+    if (cacheRef.current.fetchInProgress) {
+      console.log("Une requête de récupération est déjà en cours, attente...");
+      return;
+    }
+    
+    // Si le cache est frais, ne pas recharger les données
+    if (cacheRef.current.initialFetchDone && isCacheFresh('byType')) {
+      console.log("Utilisation du cache pour les contenus (cache récent)");
+      setLoading(false);
+      return;
+    }
+    
     async function fetchContents() {
+      // Marquer qu'une requête est en cours
+      cacheRef.current.fetchInProgress = true;
+      setLoading(true);
+      
       try {
-        // Ajouter un timeout de 10 secondes pour éviter un chargement infini
+        // Ajouter un timeout de 8 secondes pour éviter un chargement infini
         const timeoutPromise = new Promise<null>((_, reject) => {
           timeoutId = setTimeout(() => {
             reject(new Error("Délai d'attente dépassé lors de la récupération des contenus"));
-          }, 10000);
+          }, 8000);
         });
         
         // Course entre la requête Firebase et le timeout
         console.log("Envoi de la requête à Firebase pour récupérer tous les contenus");
         const fetchPromise = get(ref(db, 'contents'));
-        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
         
         // Annuler le timeout s'il n'a pas encore été déclenché
         clearTimeout(timeoutId);
@@ -164,7 +188,8 @@ export const useContent = () => {
             byId: {},
             byType: {},
             lastFetch: Date.now(),
-            initialFetchDone: true
+            initialFetchDone: true,
+            fetchInProgress: false
           };
           
           // Organiser les contenus par ID
@@ -186,6 +211,17 @@ export const useContent = () => {
           
           // Marquer le chargement initial comme terminé
           cacheRef.current.initialFetchDone = true;
+          cacheRef.current.fetchInProgress = false;
+          cacheRef.current.lastFetch = Date.now();
+          
+          // Ajouter les contenus de secours au cache
+          fallbackContent.forEach(content => {
+            cacheRef.current.byId[content.id] = content;
+          });
+          
+          cacheRef.current.byType['movie'] = fallbackContent.filter(content => content.type === 'movie');
+          cacheRef.current.byType['series'] = fallbackContent.filter(content => content.type === 'series');
+          cacheRef.current.byType['anime'] = fallbackContent.filter(content => content.type === 'anime');
         }
       } catch (err) {
         if (!isMounted) return;
@@ -197,85 +233,75 @@ export const useContent = () => {
         console.warn('Utilisation des données de secours suite à une erreur');
         setContents(fallbackContent);
         
-        // Marquer le chargement initial comme terminé
+        // Marquer le chargement initial comme terminé et la requête comme terminée
         cacheRef.current.initialFetchDone = true;
+        cacheRef.current.fetchInProgress = false;
+        cacheRef.current.lastFetch = Date.now();
+        
+        // Ajouter les contenus de secours au cache
+        fallbackContent.forEach(content => {
+          cacheRef.current.byId[content.id] = content;
+        });
+        
+        cacheRef.current.byType['movie'] = fallbackContent.filter(content => content.type === 'movie');
+        cacheRef.current.byType['series'] = fallbackContent.filter(content => content.type === 'series');
+        cacheRef.current.byType['anime'] = fallbackContent.filter(content => content.type === 'anime');
       } finally {
         if (isMounted) {
           setLoading(false);
+          cacheRef.current.fetchInProgress = false;
         }
       }
     }
     
     fetchContents();
     
-    // Nettoyage
     return () => {
       isMounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     };
   }, []);
-  
-  // Récupérer un contenu par son ID (avec mémorisation)
-  const getContentById = useCallback(async (id: string): Promise<Content | null> => {
-    // Vérifier si la requête est dans le cache et que le cache est frais
-    if (isCacheFresh('byId', id)) {
-      console.log(`Contenu ${id} récupéré depuis le cache`);
-      return cacheRef.current.byId[id];
+
+  // Récupérer un contenu par son ID
+  const getContentById = useCallback(async (contentId: string): Promise<Content | null> => {
+    // Vérifier le cache d'abord
+    if (isCacheFresh('byId', contentId)) {
+      console.log(`Contenu ${contentId} récupéré depuis le cache`);
+      return cacheRef.current.byId[contentId] || null;
     }
     
+    console.log(`Tentative de récupération du contenu avec l'ID: ${contentId}`);
+    
     try {
-      console.log(`Tentative de récupération du contenu avec l'ID: ${id}`);
+      const snapshot = await get(ref(db, `contents/${contentId}`));
       
-      // Vérifier dans les données de secours si l'ID correspond
-      const fallbackItem = fallbackContent.find(item => item.id === id);
-      
-      // Si l'ID commence par "fallback-", utiliser directement les données de secours
-      if (id.startsWith('fallback-') && fallbackItem) {
-        console.log('Utilisation des données de secours pour:', id);
-        return fallbackItem;
-      }
-      
-      const timeoutPromise = new Promise<null>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Délai d'attente dépassé pour la récupération du contenu ${id}`));
-        }, 5000);
-      });
-      
-      const fetchPromise = get(ref(db, `contents/${id}`));
-      const result = await Promise.race([fetchPromise, timeoutPromise]);
-      
-      if (result && result.exists()) {
-        const contentData = {
-          id,
-          ...result.val()
-        };
-        
-        console.log(`Contenu ${id} récupéré avec succès:`, contentData.title);
+      if (snapshot.exists()) {
+        const content = { 
+          id: contentId, 
+          ...snapshot.val() 
+        } as Content;
         
         // Mettre à jour le cache
-        cacheRef.current.byId[id] = contentData;
-        cacheRef.current.lastFetch = Date.now();
-        cacheRef.current.initialFetchDone = true;
+        cacheRef.current.byId[contentId] = content;
         
-        return contentData;
+        console.log(`Contenu ${contentId} récupéré avec succès: ${content.title}`);
+        return content;
+      } else {
+        console.warn(`Aucun contenu trouvé avec l'ID: ${contentId}`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la récupération du contenu ${contentId}:`, error);
+      
+      // Vérifier si nous avons ce contenu dans le cache en dernier recours
+      if (cacheRef.current.byId[contentId]) {
+        console.log(`Utilisation du contenu ${contentId} depuis le cache malgré l'erreur`);
+        return cacheRef.current.byId[contentId];
       }
       
-      console.warn(`Contenu avec l'ID ${id} non trouvé`);
-      
-      // Si pas trouvé, chercher dans les données de secours
+      // Vérifier dans les contenus de secours
+      const fallbackItem = fallbackContent.find(item => item.id === contentId);
       if (fallbackItem) {
-        console.log('Utilisation des données de secours comme solution de repli');
-        return fallbackItem;
-      }
-      
-      return null;
-    } catch (err) {
-      console.error(`Erreur lors de la récupération du contenu ${id}:`, err);
-      
-      // En cas d'erreur, chercher dans les données de secours
-      const fallbackItem = fallbackContent.find(item => item.id === id);
-      if (fallbackItem) {
-        console.log('Utilisation des données de secours après erreur');
         return fallbackItem;
       }
       
@@ -283,55 +309,118 @@ export const useContent = () => {
     }
   }, []);
   
-  // Récupérer les contenus par type (films ou séries) (avec mémorisation)
-  const getContentsByType = useCallback(async (type: string): Promise<Content[]> => {
-    // Vérifier si la requête est dans le cache et que le cache est frais
+  // Récupérer tous les contenus d'un type spécifique
+  const getContentsByType = useCallback(async (type: 'movie' | 'series' | 'anime'): Promise<Content[]> => {
+    // Vérifier le cache d'abord
     if (isCacheFresh('byType', type)) {
       console.log(`Contenus de type ${type} récupérés depuis le cache`);
-      return cacheRef.current.byType[type];
+      return cacheRef.current.byType[type] || [];
     }
     
+    console.log(`Tentative de récupération des contenus de type: ${type}`);
+    
+    // Définir un timeout pour éviter un chargement infini
+    const timeoutPromise = new Promise<Content[]>((resolve) => {
+      setTimeout(() => {
+        console.warn(`Délai d'attente dépassé pour les contenus de type ${type}, utilisation des données de secours`);
+        const fallbackItems = fallbackContent.filter(item => item.type === type);
+        resolve(fallbackItems);
+      }, 5000);
+    });
+    
     try {
-      console.log(`Tentative de récupération des contenus de type: ${type}`);
-      
-      // Timeout pour éviter un chargement infini
-      const timeoutPromise = new Promise<null>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Délai d'attente dépassé pour la récupération des contenus de type ${type}`));
-        }, 5000);
-      });
-      
-      const fetchPromise = get(ref(db, 'contents'));
-      const result = await Promise.race([fetchPromise, timeoutPromise]);
-      
-      if (result && result.exists()) {
-        const contentsObj = result.val();
-        const filteredContents = Object.keys(contentsObj)
-          .filter(key => contentsObj[key].type === type)
-          .map(key => ({
-            id: key,
-            ...contentsObj[key]
-          }));
+      // Essayer de récupérer tous les contenus existants d'abord (si pas déjà chargés)
+      if (!cacheRef.current.initialFetchDone) {
+        // Utiliser Promise.race pour limiter le temps d'attente
+        const fetchPromise = (async () => {
+          const snapshot = await get(ref(db, 'contents'));
           
-        console.log(`${filteredContents.length} contenus de type ${type} récupérés`);
+          if (snapshot.exists()) {
+            const contentsObj = snapshot.val();
+            const allContents = Object.keys(contentsObj).map(key => ({
+              id: key,
+              ...contentsObj[key]
+            })) as Content[];
+            
+            // Mettre à jour le cache
+            allContents.forEach(content => {
+              cacheRef.current.byId[content.id] = content;
+            });
+            
+            // Trier par type
+            cacheRef.current.byType['movie'] = allContents.filter(content => content.type === 'movie');
+            cacheRef.current.byType['series'] = allContents.filter(content => content.type === 'series');
+            cacheRef.current.byType['anime'] = allContents.filter(content => content.type === 'anime');
+            
+            cacheRef.current.initialFetchDone = true;
+            cacheRef.current.lastFetch = Date.now();
+            
+            console.log(`${cacheRef.current.byType[type].length} contenus de type ${type} récupérés`);
+            return cacheRef.current.byType[type];
+          }
+          
+          // Si aucun contenu, renvoyer les données de secours
+          throw new Error('Aucun contenu trouvé');
+        })();
         
-        // Mettre à jour le cache
-        cacheRef.current.byType[type] = filteredContents;
-        cacheRef.current.lastFetch = Date.now();
-        cacheRef.current.initialFetchDone = true;
+        // Utiliser Promise.race pour éviter un chargement infini
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        return result;
+      } else {
+        // Utiliser Promise.race pour limiter le temps d'attente
+        const fetchPromise = (async () => {
+          // Utiliser une requête filtrée par type
+          const contentsByTypeQuery = query(
+            ref(db, 'contents'),
+            orderByChild('type'),
+            equalTo(type)
+          );
+          
+          const snapshot = await get(contentsByTypeQuery);
+          
+          if (snapshot.exists()) {
+            const contentsObj = snapshot.val();
+            const contentsList = Object.keys(contentsObj).map(key => ({
+              id: key,
+              ...contentsObj[key]
+            })) as Content[];
+            
+            // Mettre à jour le cache
+            contentsList.forEach(content => {
+              cacheRef.current.byId[content.id] = content;
+            });
+            
+            cacheRef.current.byType[type] = contentsList;
+            cacheRef.current.lastFetch = Date.now();
+            
+            console.log(`${contentsList.length} contenus de type ${type} récupérés`);
+            return contentsList;
+          } else {
+            console.warn(`Aucun contenu de type ${type} trouvé`);
+            // Si aucun contenu, utiliser des fallbacks
+            const fallbackItems = fallbackContent.filter(item => item.type === type);
+            cacheRef.current.byType[type] = fallbackItems;
+            return fallbackItems;
+          }
+        })();
         
-        return filteredContents;
+        // Utiliser Promise.race pour éviter un chargement infini
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        return result;
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la récupération des contenus de type ${type}:`, error);
+      
+      // Si le cache contient déjà des données pour ce type, les utiliser
+      if (cacheRef.current.byType[type] && cacheRef.current.byType[type].length > 0) {
+        console.log(`Utilisation des contenus de type ${type} depuis le cache malgré l'erreur`);
+        return cacheRef.current.byType[type];
       }
       
-      console.warn(`Aucun contenu de type ${type} trouvé, utilisation des données de secours`);
-      // Utiliser les données de secours du type demandé
-      return fallbackContent.filter(item => item.type === type);
-    } catch (err) {
-      console.error(`Erreur lors de la récupération des contenus de type ${type}:`, err);
-      
-      // En cas d'erreur, utiliser les données de secours du type demandé
-      console.warn('Utilisation des données de secours après erreur');
-      return fallbackContent.filter(item => item.type === type);
+      // Sinon, utiliser des données de secours
+      const fallbackItems = fallbackContent.filter(item => item.type === type);
+      cacheRef.current.byType[type] = fallbackItems;
+      return fallbackItems;
     }
   }, []);
 
