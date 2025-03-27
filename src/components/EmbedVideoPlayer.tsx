@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Typography, CircularProgress, Paper, Button, Select, MenuItem, FormControl, InputLabel, Modal, TextField, SelectChangeEvent } from '@mui/material';
-import { VideoSource, Content, Episode } from '../types';
-import { reportVideoSource } from '../services/reportService';
-import { useWatchProgress } from '../hooks/useWatchProgress';
-import { useAuth } from '../hooks/useAuth';
+import { VideoSource, Content, Episode } from '../types/index.ts';
+import { reportVideoSource } from '../services/reportService.ts';
+import { useWatchProgress } from '../hooks/useWatchProgress.ts';
+import { useAuth } from '../hooks/useAuth.ts';
 
 interface EmbedVideoPlayerProps {
   content: Content;
