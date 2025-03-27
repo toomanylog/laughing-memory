@@ -1,15 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import Navbar from './components/Navbar';
-import HomePage from './pages/HomePage';
-import AuthPage from './pages/AuthPage';
-import WatchPage from './pages/WatchPage';
-import AdminPage from './pages/AdminPage';
-import MoviesPage from './pages/MoviesPage';
-import SeriesPage from './pages/SeriesPage';
-import ProfilePage from './pages/ProfilePage';
-import NotFoundPage from './pages/NotFoundPage';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import Navbar from './components/Navbar.tsx';
+import HomePage from './pages/HomePage.tsx';
+import AuthPage from './pages/AuthPage.tsx';
+import WatchPage from './pages/WatchPage.tsx';
+import AdminPage from './pages/AdminPage.tsx';
+import MoviesPage from './pages/MoviesPage.tsx';
+import SeriesPage from './pages/SeriesPage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
+import NotFoundPage from './pages/NotFoundPage.tsx';
 
 function App() {
   return (
