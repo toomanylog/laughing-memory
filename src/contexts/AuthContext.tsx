@@ -7,8 +7,8 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { ref, set, get } from 'firebase/database';
-import { auth, db } from '../firebase';
-import { User } from '../types';
+import { auth, db } from '../firebase.ts';
+import { User } from '../types/index.ts';
 
 interface AuthContextProps {
   currentUser: FirebaseUser | null;
