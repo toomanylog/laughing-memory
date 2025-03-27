@@ -16,36 +16,59 @@ const WatchPage: React.FC = () => {
   const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   const { getContentById } = useContent();
   
   // Récupérer les informations du contenu
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+    
     async function fetchContent() {
       setLoading(true);
       
       if (!contentId) {
-        setError('Identifiant de contenu manquant');
-        setLoading(false);
+        if (isMounted) {
+          setError('Identifiant de contenu manquant');
+          setLoading(false);
+        }
         return;
       }
       
+      // Timeout pour éviter un chargement infini
+      timeoutId = setTimeout(() => {
+        if (isMounted) {
+          console.warn("Délai d'attente dépassé pour le chargement du contenu");
+          setError("Le contenu n'a pas pu être chargé dans un délai raisonnable. Veuillez réessayer.");
+          setLoading(false);
+        }
+      }, 10000);
+      
       try {
+        console.log(`Tentative de récupération du contenu avec l'ID: ${contentId}`);
         const contentData = await getContentById(contentId);
         
+        if (!isMounted) return;
+        clearTimeout(timeoutId);
+        
         if (!contentData) {
+          console.error('Contenu non trouvé');
           setError('Contenu non trouvé');
           setLoading(false);
           return;
         }
         
+        console.log('Contenu récupéré avec succès:', contentData.title);
         setContent(contentData);
         
         // Si c'est une série et que des IDs de saison/épisode sont fournis
         if (contentData.type === 'series' && contentData.seasons && seasonId && episodeId) {
+          console.log(`Recherche de la saison ${seasonId}, épisode ${episodeId}`);
           const season = contentData.seasons.find(s => s.id === seasonId);
           
           if (!season) {
+            console.error('Saison non trouvée');
             setError('Saison non trouvée');
             setLoading(false);
             return;
@@ -54,11 +77,13 @@ const WatchPage: React.FC = () => {
           const episode = season.episodes.find(e => e.id === episodeId);
           
           if (!episode) {
+            console.error('Épisode non trouvé');
             setError('Épisode non trouvé');
             setLoading(false);
             return;
           }
           
+          console.log(`Épisode trouvé: ${episode.title}`);
           setCurrentEpisode(episode);
         } else if (contentData.type === 'series' && contentData.seasons && contentData.seasons.length > 0) {
           // Si c'est une série mais pas d'IDs fournis, prendre le premier épisode
@@ -67,20 +92,42 @@ const WatchPage: React.FC = () => {
           setCurrentEpisode(firstEpisode);
           
           // Mettre à jour l'URL pour inclure la saison et l'épisode
+          console.log('Redirection vers le premier épisode');
           navigate(`/watch/${contentId}/${firstSeason.id}/${firstEpisode.id}`, { replace: true });
         }
         
         setError(null);
       } catch (err) {
+        if (!isMounted) return;
+        clearTimeout(timeoutId);
+        
         console.error('Erreur lors de la récupération du contenu:', err);
-        setError('Erreur lors du chargement du contenu');
+        setError('Erreur lors du chargement du contenu. Veuillez réessayer.');
+        
+        // Réessayer automatiquement (max 3 tentatives)
+        if (retryCount < 2) {
+          const nextRetry = retryCount + 1;
+          console.log(`Nouvelle tentative (${nextRetry}/3) dans 3 secondes...`);
+          setRetryCount(nextRetry);
+          setTimeout(() => {
+            if (isMounted) fetchContent();
+          }, 3000);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          clearTimeout(timeoutId);
+          setLoading(false);
+        }
       }
     }
     
     fetchContent();
-  }, [contentId, seasonId, episodeId, getContentById, navigate]);
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [contentId, seasonId, episodeId, getContentById, navigate, retryCount]);
   
   // Changer d'épisode
   const handleEpisodeChange = (seasonId: string, episode: Episode) => {
@@ -93,8 +140,9 @@ const WatchPage: React.FC = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mb-4"></div>
+          <p className="text-gray-600">Chargement du contenu...</p>
         </div>
       </div>
     );
@@ -103,8 +151,22 @@ const WatchPage: React.FC = () => {
   if (error || !content) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           <p>{error || 'Une erreur est survenue'}</p>
+        </div>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => navigate('/')}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+          >
+            Retour à l'accueil
+          </button>
+          <button 
+            onClick={() => setRetryCount(retryCount + 1)}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+          >
+            Réessayer
+          </button>
         </div>
       </div>
     );

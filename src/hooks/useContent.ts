@@ -1,78 +1,212 @@
 import { useState, useEffect } from 'react';
-import { ref, get, query, orderByChild, push, set, remove, update, equalTo } from 'firebase/database';
+import { ref, push, set, get, update, remove, query, orderByChild, equalTo } from 'firebase/database';
 import { db } from '../firebase.ts';
 import { Content } from '../types/index.ts';
 
-export function useContent() {
-  const [contents, setContents] = useState<Content[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+// Données de secours pour garantir un fonctionnement minimal même sans Firebase
+const fallbackContent: Content[] = [
+  {
+    id: 'fallback-movie-1',
+    title: 'Film de Secours',
+    description: 'Ce film est affiché lorsque les données Firebase ne sont pas disponibles.',
+    imageUrl: 'https://via.placeholder.com/500x750',
+    videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
+    type: 'movie',
+    genre: ['Action', 'Démonstration'],
+    releaseYear: 2023,
+    duration: 120,
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  },
+  {
+    id: 'fallback-series-1',
+    title: 'Série de Secours',
+    description: 'Cette série est affichée lorsque les données Firebase ne sont pas disponibles.',
+    imageUrl: 'https://via.placeholder.com/500x750',
+    videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
+    type: 'series',
+    genre: ['Comédie', 'Démonstration'],
+    releaseYear: 2023,
+    duration: 0,
+    seasons: [
+      {
+        id: 'fallback-season-1',
+        number: 1,
+        episodes: [
+          {
+            id: 'fallback-episode-1',
+            number: 1,
+            title: 'Épisode 1',
+            description: 'Épisode de démonstration.',
+            duration: 30,
+            videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
+          }
+        ]
+      }
+    ],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  }
+];
 
-  // Récupérer tous les contenus
+export const useContent = () => {
+  const [contents, setContents] = useState<Content[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Charger tous les contenus au montage du composant
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+    
     async function fetchContents() {
-      setLoading(true);
       try {
-        const contentsRef = ref(db, 'contents');
-        const snapshot = await get(contentsRef);
+        // Ajouter un timeout de 10 secondes pour éviter un chargement infini
+        const timeoutPromise = new Promise<null>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error("Délai d'attente dépassé lors de la récupération des contenus"));
+          }, 10000);
+        });
         
-        if (snapshot.exists()) {
-          const contentsObj = snapshot.val();
-          const contentsArray = Object.keys(contentsObj).map(key => ({
+        // Course entre la requête Firebase et le timeout
+        const fetchPromise = get(ref(db, 'contents'));
+        const result = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        // Annuler le timeout s'il n'a pas encore été déclenché
+        clearTimeout(timeoutId);
+        
+        if (!isMounted) return;
+        
+        if (result && result.exists()) {
+          const contentsObj = result.val();
+          const contentsList = Object.keys(contentsObj).map(key => ({
             id: key,
             ...contentsObj[key]
           }));
-          setContents(contentsArray);
+          
+          console.log('Contenus récupérés avec succès:', contentsList.length);
+          setContents(contentsList);
+          setError(null);
         } else {
-          setContents([]);
+          console.warn('Aucun contenu trouvé dans Firebase, utilisation des données de secours');
+          setContents(fallbackContent);
         }
-        setError(null);
       } catch (err) {
+        if (!isMounted) return;
+        
         console.error('Erreur lors de la récupération des contenus:', err);
-        setError('Erreur lors du chargement des contenus. Veuillez réessayer.');
+        setError('Erreur lors du chargement des contenus');
+        
+        // Utiliser les données de secours en cas d'erreur
+        console.warn('Utilisation des données de secours suite à une erreur');
+        setContents(fallbackContent);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
     
     fetchContents();
+    
+    // Nettoyage
+    return () => {
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
-
-  // Récupérer un contenu par ID
-  const getContentById = async (contentId: string): Promise<Content | null> => {
+  
+  // Récupérer un contenu par son ID
+  const getContentById = async (id: string): Promise<Content | null> => {
     try {
-      const contentRef = ref(db, `contents/${contentId}`);
-      const snapshot = await get(contentRef);
+      console.log(`Tentative de récupération du contenu avec l'ID: ${id}`);
       
-      if (snapshot.exists()) {
-        return { id: contentId, ...snapshot.val() } as Content;
+      // Vérifier dans les données de secours si l'ID correspond
+      const fallbackItem = fallbackContent.find(item => item.id === id);
+      
+      // Si l'ID commence par "fallback-", utiliser directement les données de secours
+      if (id.startsWith('fallback-') && fallbackItem) {
+        console.log('Utilisation des données de secours pour:', id);
+        return fallbackItem;
       }
+      
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Délai d'attente dépassé pour la récupération du contenu ${id}`));
+        }, 5000);
+      });
+      
+      const fetchPromise = get(ref(db, `contents/${id}`));
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      if (result && result.exists()) {
+        console.log(`Contenu ${id} récupéré avec succès`);
+        return {
+          id,
+          ...result.val()
+        };
+      }
+      
+      console.warn(`Contenu avec l'ID ${id} non trouvé`);
+      
+      // Si pas trouvé, chercher dans les données de secours
+      if (fallbackItem) {
+        console.log('Utilisation des données de secours comme solution de repli');
+        return fallbackItem;
+      }
+      
       return null;
     } catch (err) {
-      console.error(`Erreur lors de la récupération du contenu ${contentId}:`, err);
+      console.error(`Erreur lors de la récupération du contenu ${id}:`, err);
+      
+      // En cas d'erreur, chercher dans les données de secours
+      const fallbackItem = fallbackContent.find(item => item.id === id);
+      if (fallbackItem) {
+        console.log('Utilisation des données de secours après erreur');
+        return fallbackItem;
+      }
+      
       return null;
     }
   };
-
-  // Récupérer les contenus par type (film ou série)
+  
+  // Récupérer les contenus par type (films ou séries)
   const getContentsByType = async (type: string): Promise<Content[]> => {
     try {
-      const contentsRef = ref(db, 'contents');
-      const snapshot = await get(contentsRef);
+      console.log(`Tentative de récupération des contenus de type: ${type}`);
       
-      if (snapshot.exists()) {
-        const contentsObj = snapshot.val();
-        return Object.keys(contentsObj)
+      // Timeout pour éviter un chargement infini
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`Délai d'attente dépassé pour la récupération des contenus de type ${type}`));
+        }, 5000);
+      });
+      
+      const fetchPromise = get(ref(db, 'contents'));
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      if (result && result.exists()) {
+        const contentsObj = result.val();
+        const filteredContents = Object.keys(contentsObj)
           .filter(key => contentsObj[key].type === type)
           .map(key => ({
             id: key,
             ...contentsObj[key]
           }));
+          
+        console.log(`${filteredContents.length} contenus de type ${type} récupérés`);
+        return filteredContents;
       }
-      return [];
+      
+      console.warn(`Aucun contenu de type ${type} trouvé, utilisation des données de secours`);
+      // Utiliser les données de secours du type demandé
+      return fallbackContent.filter(item => item.type === type);
     } catch (err) {
       console.error(`Erreur lors de la récupération des contenus de type ${type}:`, err);
-      return [];
+      
+      // En cas d'erreur, utiliser les données de secours du type demandé
+      console.warn('Utilisation des données de secours après erreur');
+      return fallbackContent.filter(item => item.type === type);
     }
   };
 

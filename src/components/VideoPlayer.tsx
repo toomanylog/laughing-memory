@@ -20,6 +20,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Utiliser notre hook pour gérer la progression
   const { progress, saveProgress, loading } = useWatchProgress(content, episode, seasonId);
@@ -41,7 +43,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       
       // Lancer la lecture si autoPlay est activé
       if (autoPlay) {
-        videoRef.current.play().catch(err => console.error('La lecture automatique a échoué:', err));
+        videoRef.current.play().catch(err => {
+          console.error('La lecture automatique a échoué:', err);
+          setVideoError("La lecture automatique a été bloquée par votre navigateur. Veuillez cliquer sur Lecture.");
+        });
       }
     }
   }, [videoRef, progress, loading, autoPlay, volume]);
@@ -72,7 +77,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (isPlaying) {
         videoRef.current.pause();
       } else {
-        videoRef.current.play();
+        videoRef.current.play().catch(err => {
+          console.error('Erreur lors de la lecture:', err);
+          setVideoError("Impossible de lire la vidéo. Vérifiez votre connexion ou essayez une autre source.");
+        });
       }
       setIsPlaying(!isPlaying);
     }
@@ -101,14 +109,54 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
   
+  // Gérer les erreurs de chargement de vidéo
+  const handleVideoError = () => {
+    console.error('Erreur lors du chargement de la vidéo:', videoUrl);
+    setVideoError("Impossible de charger la vidéo. La source pourrait être indisponible ou le format incompatible.");
+    setIsLoading(false);
+  };
+  
+  // Gérer les événements de chargement
+  const handleLoadStart = () => {
+    setIsLoading(true);
+    setVideoError(null);
+  };
+  
+  const handleCanPlay = () => {
+    setIsLoading(false);
+    setVideoError(null);
+  };
+  
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Chargement...</div>;
+    return (
+      <div className="flex justify-center items-center h-64 bg-gray-100 rounded">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mb-2"></div>
+          <p className="text-gray-700">Chargement de la vidéo...</p>
+        </div>
+      </div>
+    );
   }
   
   return (
     <div className="flex flex-col w-full">
       {/* Lecteur vidéo */}
       <div className="relative w-full">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 z-10">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mb-2"></div>
+              <p className="text-white">Chargement de la vidéo...</p>
+            </div>
+          </div>
+        )}
+        
+        {videoError && (
+          <div className="absolute bottom-16 left-0 right-0 bg-red-600 text-white p-2 text-center z-20">
+            {videoError}
+          </div>
+        )}
+        
         <video
           ref={videoRef}
           className="w-full h-auto"
@@ -116,6 +164,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           onTimeUpdate={handleTimeUpdate}
           onDurationChange={handleDurationChange}
           onClick={handlePlayPause}
+          onError={handleVideoError}
+          onLoadStart={handleLoadStart}
+          onCanPlay={handleCanPlay}
+          controlsList="nodownload"
+          playsInline
         />
         
         {/* Controls overlay */}
@@ -124,7 +177,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <input
             type="range"
             min={0}
-            max={duration}
+            max={duration || 1}
             value={currentTime}
             onChange={handleSeek}
             className="w-full"
@@ -135,13 +188,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             <button 
               onClick={handlePlayPause}
               className="p-2"
+              disabled={!!videoError}
             >
               {isPlaying ? '⏸️' : '▶️'}
             </button>
             
             {/* Time display */}
             <div className="text-sm">
-              {formatTime(currentTime)} / {formatTime(duration)}
+              {formatTime(currentTime)} / {formatTime(duration || 0)}
             </div>
             
             {/* Volume control */}
