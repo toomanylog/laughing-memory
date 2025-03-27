@@ -1,114 +1,94 @@
-# Laughing Memory
+# Laughing Memory - Plateforme de Streaming
 
-Une application de streaming de films et séries construite avec React, TypeScript et Firebase.
+Une plateforme de streaming moderne permettant aux utilisateurs de regarder des films et des séries, avec suivi de progression et fonctionnalités d'administration.
 
 ## Fonctionnalités
 
-* Visionnage de films et séries
-* Système d'authentification
-* Suivi de la progression
-* Liste de visionnage
-* Interface d'administration
-* Thème clair/sombre
-* Support multilingue (FR/EN)
-* Interface responsive
+- 🎬 **Catalogue de contenus** : Films et séries organisés par catégories
+- 👤 **Authentification** : Inscription et connexion via Firebase
+- 🎯 **Suivi de progression** : Enregistrement de la progression de visionnage
+- 💾 **Stockage local** : Suivi de progression même pour les utilisateurs non connectés
+- 📱 **Design responsive** : Interface adaptée aux mobiles et ordinateurs
+- 🔍 **Recherche et filtrage** : Facilité de navigation dans le catalogue
+- 👑 **Panel d'administration** : Gestion complète des contenus
 
-## Prérequis
+## Technologies utilisées
 
-* Node.js (v18 ou supérieur)
-* npm ou yarn
-* Compte Firebase
+- **Frontend** : React, TypeScript, Tailwind CSS
+- **Backend** : Firebase (Authentication, Realtime Database)
+- **Routage** : React Router
+- **Lecteur vidéo** : React Player
+- **État global** : Context API, React Hooks personnalisés
 
 ## Installation
 
 1. Clonez le dépôt :
-
-```bash
-git clone https://github.com/toomanylog/laughing-memory.git
-cd laughing-memory
-```
+   ```bash
+   git clone https://github.com/votre-utilisateur/laughing-memory.git
+   cd laughing-memory
+   ```
 
 2. Installez les dépendances :
+   ```bash
+   npm install
+   ```
 
-```bash
-npm install
-```
+3. Créez un fichier `.env` à la racine du projet en utilisant `.env.example` comme modèle, et remplissez-le avec vos informations Firebase.
 
-3. Créez un fichier `.env.local` à la racine du projet et copiez les variables d'environnement depuis `.env.example` :
-
-```bash
-cp .env.example .env.local
-```
-
-4. Configurez vos variables d'environnement Firebase dans le fichier `.env.local`
-5. Lancez l'application en mode développement :
-
-```bash
-npm run dev
-```
+4. Lancez l'application en mode développement :
+   ```bash
+   npm start
+   ```
 
 ## Déploiement
 
-L'application est configurée pour être déployée sur Netlify. Pour déployer :
+L'application est préconfigurée pour être déployée sur Netlify :
 
-1. Créez un compte Netlify si ce n'est pas déjà fait
-2. Connectez votre dépôt GitHub à Netlify
-3. Configurez les variables d'environnement dans les paramètres de déploiement Netlify
+1. Connectez votre dépôt GitHub à Netlify
+2. Configurez les variables d'environnement dans Netlify (copier les valeurs du fichier `.env`)
+3. Utilisez les paramètres de build suivants :
+   - Build command: `npm run build`
+   - Publish directory: `build`
 4. Déployez !
 
 ## Structure du projet
 
 ```
-src/
-  ├── app/          # Pages de l'application (Next.js App Router)
-  ├── components/   # Composants réutilisables
-  ├── lib/          # Fonctions utilitaires, configuration Firebase
-  ├── providers/    # Providers React (contextes)
+laughing-memory/
+├── public/             # Fichiers statiques
+├── src/
+│   ├── components/     # Composants réutilisables
+│   │   └── admin/      # Composants d'administration
+│   ├── contexts/       # Contextes React (Auth, etc.)
+│   ├── hooks/          # Hooks personnalisés
+│   ├── pages/          # Pages principales de l'application
+│   └── types/          # Types TypeScript
+├── .env                # Variables d'environnement (non versionné)
+└── .env.example        # Exemple de variables d'environnement
 ```
 
-## Technologies utilisées
+## Pages principales
 
-* React
-* Next.js 14
-* TypeScript
-* Tailwind CSS
-* Firebase (Auth & Realtime Database)
-* NextAuth.js
-* Zustand
-* React Hook Form
-* Zod
+- **HomePage** : Présentation des contenus populaires et suggestions
+- **MoviesPage** : Liste des films disponibles
+- **SeriesPage** : Liste des séries disponibles
+- **WatchPage** : Lecteur vidéo avec contrôles et informations sur le contenu
+- **ProfilePage** : Historique de visionnage et informations utilisateur
+- **AdminPage** : Gestion des contenus (ajout, modification, suppression)
+- **AuthPage** : Connexion et inscription
+- **NotFoundPage** : Page d'erreur 404 personnalisée
 
-## Configuration de Firebase
+## Règles de sécurité Firebase
 
-Les règles de sécurité Firebase pour la Realtime Database sont définies dans le fichier `firebase.rules.json`. Assurez-vous de les déployer dans votre projet Firebase.
-
-## Variables d'environnement
-
-Pour le déploiement sur Netlify, vous devez configurer les variables d'environnement suivantes :
-
-```
-NEXT_PUBLIC_FIREBASE_API_KEY=votre-api-key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=votre-auth-domain
-NEXT_PUBLIC_FIREBASE_DATABASE_URL=votre-database-url
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=votre-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=votre-storage-bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=votre-messaging-sender-id
-NEXT_PUBLIC_FIREBASE_APP_ID=votre-app-id
-NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=votre-measurement-id
-NEXTAUTH_SECRET=votre-secret
-NEXTAUTH_URL=votre-url-de-deploiement
-```
-
-## Contribution
-
-Les contributions sont les bienvenues ! N'hésitez pas à :
-
-1. Fork le projet
-2. Créer une branche pour votre fonctionnalité
-3. Commiter vos changements
-4. Pousser vers la branche
-5. Ouvrir une Pull Request
+Des règles de sécurité sont définies pour protéger les données :
+- Lecture publique pour les contenus
+- Écriture limitée aux utilisateurs authentifiés
+- Administration réservée aux utilisateurs avec rôle "admin"
 
 ## Licence
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+Ce projet est sous licence MIT.
+
+---
+
+Développé avec ❤️ par [Votre Nom]
