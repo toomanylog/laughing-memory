@@ -10,6 +10,7 @@ import {
 import { ref, get, set } from 'firebase/database';
 import { db } from '../firebase.ts';
 import { User } from '../types/index.ts';
+import React from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -157,9 +158,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut }}>
-      {children}
-    </AuthContext.Provider>
+    React.createElement(AuthContext.Provider, 
+      { value: { user, loading, error, signIn, signUp, signOut } },
+      children
+    )
   );
 };
 
