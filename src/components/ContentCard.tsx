@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Content } from '../types';
+import { Content } from '../types/index.ts';
 
 interface ContentCardProps {
   content: Content;
