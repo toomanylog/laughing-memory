@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useContent } from '../hooks/useContent.ts';
 import { Content, Episode } from '../types/index.ts';
@@ -19,22 +19,24 @@ const WatchPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
   
   const { getContentById } = useContent();
+  const fetchingRef = useRef(false);
+  const lastFetchedIdRef = useRef<string | null>(null);
   
-  // Récupérer les informations du contenu
   useEffect(() => {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
     
+    // Éviter les appels répétés pour le même ID
+    if (fetchingRef.current || !contentId || contentId === lastFetchedIdRef.current) {
+      return;
+    }
+    
     async function fetchContent() {
-      setLoading(true);
+      if (!contentId) return;
       
-      if (!contentId) {
-        if (isMounted) {
-          setError('Identifiant de contenu manquant');
-          setLoading(false);
-        }
-        return;
-      }
+      // Marquer comme en cours de récupération
+      fetchingRef.current = true;
+      setLoading(true);
       
       // Timeout pour éviter un chargement infini
       timeoutId = setTimeout(() => {
@@ -42,6 +44,7 @@ const WatchPage: React.FC = () => {
           console.warn("Délai d'attente dépassé pour le chargement du contenu");
           setError("Le contenu n'a pas pu être chargé dans un délai raisonnable. Veuillez réessayer.");
           setLoading(false);
+          fetchingRef.current = false;
         }
       }, 10000);
       
@@ -56,11 +59,13 @@ const WatchPage: React.FC = () => {
           console.error('Contenu non trouvé');
           setError('Contenu non trouvé');
           setLoading(false);
+          fetchingRef.current = false;
           return;
         }
         
         console.log('Contenu récupéré avec succès:', contentData.title);
         setContent(contentData);
+        lastFetchedIdRef.current = contentId;
         
         // Si c'est une série et que des IDs de saison/épisode sont fournis
         if (contentData.type === 'series' && contentData.seasons && seasonId && episodeId) {
@@ -71,6 +76,7 @@ const WatchPage: React.FC = () => {
             console.error('Saison non trouvée');
             setError('Saison non trouvée');
             setLoading(false);
+            fetchingRef.current = false;
             return;
           }
           
@@ -80,6 +86,7 @@ const WatchPage: React.FC = () => {
             console.error('Épisode non trouvé');
             setError('Épisode non trouvé');
             setLoading(false);
+            fetchingRef.current = false;
             return;
           }
           
@@ -110,13 +117,19 @@ const WatchPage: React.FC = () => {
           console.log(`Nouvelle tentative (${nextRetry}/3) dans 3 secondes...`);
           setRetryCount(nextRetry);
           setTimeout(() => {
-            if (isMounted) fetchContent();
+            if (isMounted) {
+              fetchingRef.current = false;
+              fetchContent();
+            }
           }, 3000);
+        } else {
+          fetchingRef.current = false;
         }
       } finally {
         if (isMounted) {
           clearTimeout(timeoutId);
           setLoading(false);
+          // Ne pas réinitialiser fetchingRef.current ici pour éviter les appels multiples
         }
       }
     }
@@ -130,10 +143,11 @@ const WatchPage: React.FC = () => {
   }, [contentId, seasonId, episodeId, getContentById, navigate, retryCount]);
   
   // Changer d'épisode
-  const handleEpisodeChange = (seasonId: string, episode: Episode) => {
+  const handleEpisodeChange = (newSeasonId: string, episode: Episode) => {
     if (content) {
       setCurrentEpisode(episode);
-      navigate(`/watch/${content.id}/${seasonId}/${episode.id}`);
+      fetchingRef.current = false; // Autoriser un nouveau chargement
+      navigate(`/watch/${content.id}/${newSeasonId}/${episode.id}`);
     }
   };
   
@@ -162,7 +176,11 @@ const WatchPage: React.FC = () => {
             Retour à l'accueil
           </button>
           <button 
-            onClick={() => setRetryCount(retryCount + 1)}
+            onClick={() => {
+              fetchingRef.current = false;
+              lastFetchedIdRef.current = null;
+              setRetryCount(retryCount + 1);
+            }}
             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
           >
             Réessayer
@@ -195,7 +213,7 @@ const WatchPage: React.FC = () => {
             
             <div className="flex items-center text-sm text-gray-600 mt-2">
               <span className="mr-4">{content.releaseYear}</span>
-              {content.genre.map((genre, index) => (
+              {content.genre?.map((genre, index) => (
                 <span key={index} className="mr-2">
                   {index > 0 && "•"} {genre}
                 </span>
