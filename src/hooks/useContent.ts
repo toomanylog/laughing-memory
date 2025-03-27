@@ -55,21 +55,19 @@ export function useContent() {
   };
 
   // Récupérer les contenus par type (film ou série)
-  const getContentsByType = async (type: 'movie' | 'series'): Promise<Content[]> => {
+  const getContentsByType = async (type: string): Promise<Content[]> => {
     try {
-      const contentsByTypeRef = query(
-        ref(db, 'contents'), 
-        orderByChild('type'),
-        equalTo(type)
-      );
-      const snapshot = await get(contentsByTypeRef);
+      const contentsRef = ref(db, 'contents');
+      const snapshot = await get(contentsRef);
       
       if (snapshot.exists()) {
         const contentsObj = snapshot.val();
-        return Object.keys(contentsObj).map(key => ({
-          id: key,
-          ...contentsObj[key]
-        }));
+        return Object.keys(contentsObj)
+          .filter(key => contentsObj[key].type === type)
+          .map(key => ({
+            id: key,
+            ...contentsObj[key]
+          }));
       }
       return [];
     } catch (err) {
