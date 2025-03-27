@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ref, set, get } from 'firebase/database';
-import { db } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
-import { UserProgress, Content, Episode } from '../types';
+import { db } from '../firebase.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { UserProgress, Content, Episode } from '../types/index.ts';
 
 // Clé pour stocker la progression localement
 const LOCAL_STORAGE_KEY = 'watch-progress';

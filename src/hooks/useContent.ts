@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ref, get, query, orderByChild, push, set, remove, update, equalTo } from 'firebase/database';
-import { db } from '../firebase';
-import { Content } from '../types';
+import { db } from '../firebase.ts';
+import { Content } from '../types/index.ts';
 
 export function useContent() {
   const [contents, setContents] = useState<Content[]>([]);
