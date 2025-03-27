@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Content, Season, Episode, VideoSource } from '../../types';
-import videoSourceParser from '../../utils/videoSourceParser';
+import { Content, Season, Episode, VideoSource } from '../../types/index.ts';
+import videoSourceParser from '../../utils/videoSourceParser.ts';
 
 interface ContentFormProps {
   content?: Content;
