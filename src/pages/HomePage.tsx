@@ -1,103 +1,181 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import ContentCard from '../components/ContentCard.tsx';
 import { useContent } from '../hooks/useContent.ts';
 import { Content } from '../types/index.ts';
 
 const HomePage: React.FC = () => {
-  const { contents, loading, error } = useContent();
-  const [featuredContent, setFeaturedContent] = useState<Content | null>(null);
-  const [newReleases, setNewReleases] = useState<Content[]>([]);
-  const [popular, setPopular] = useState<Content[]>([]);
-  
+  const { getContentsByType } = useContent();
+  const [trending, setTrending] = useState<Content[]>([]);
+  const [latest, setLatest] = useState<Content[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const fetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+
   useEffect(() => {
-    if (contents.length > 0) {
-      // Pour la démonstration, on sélectionne un contenu aléatoire comme contenu à la une
-      const randomIndex = Math.floor(Math.random() * contents.length);
-      setFeaturedContent(contents[randomIndex]);
-      
-      // Trier les contenus par date de création (plus récents en premier)
-      const sortedByDate = [...contents].sort((a, b) => b.createdAt - a.createdAt);
-      setNewReleases(sortedByDate.slice(0, 6)); // 6 nouveautés
-      
-      // Sélectionner quelques contenus pour la section "populaire"
-      // Dans une application réelle, on utiliserait des données de visionnage/notation
-      const shuffled = [...contents].sort(() => 0.5 - Math.random());
-      setPopular(shuffled.slice(0, 6)); // 6 contenus populaires
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    // Éviter les appels répétés trop fréquents
+    const now = Date.now();
+    if (fetchingRef.current || (now - lastFetchTimeRef.current < 10000 && trending.length > 0 && latest.length > 0)) {
+      return;
     }
-  }, [contents]);
-  
+
+    async function fetchContents() {
+      // Marquer comme en cours de récupération
+      fetchingRef.current = true;
+      setLoading(true);
+      
+      // Timeout pour éviter un chargement infini
+      timeoutId = setTimeout(() => {
+        if (isMounted) {
+          console.warn("Délai d'attente dépassé pour les contenus, utilisation des fallbacks");
+          setLoading(false);
+          setError("Impossible de charger les contenus. Veuillez réessayer plus tard.");
+          fetchingRef.current = false;
+        }
+      }, 8000);
+
+      try {
+        console.log("Tentative de récupération des contenus...");
+        // Récupérer tous les contenus puis faire le filtrage côté client
+        const moviesData = await getContentsByType('movie');
+        const seriesData = await getContentsByType('series');
+        
+        if (isMounted) {
+          clearTimeout(timeoutId);
+          lastFetchTimeRef.current = Date.now();
+          
+          // Combinaison de tous les contenus
+          const allContents = [...moviesData, ...seriesData];
+          
+          // Simuler contenus tendance en prenant les 5 premiers
+          const trendingContents = allContents.slice(0, 5);
+          
+          // Simuler derniers ajouts en prenant les 5 derniers
+          const latestContents = [...allContents].sort((a, b) => {
+            return (b.createdAt || 0) - (a.createdAt || 0);
+          }).slice(0, 5);
+          
+          setTrending(trendingContents);
+          setLatest(latestContents);
+          setError(null);
+          
+          console.log(`${trendingContents.length} contenus tendance et ${latestContents.length} derniers ajouts récupérés`);
+        }
+      } catch (err) {
+        if (isMounted) {
+          clearTimeout(timeoutId);
+          console.error('Erreur lors de la récupération des contenus:', err);
+          setError("Erreur lors du chargement des contenus. Veuillez réessayer.");
+          
+          // Réessayer automatiquement (max 3 tentatives)
+          if (retryCount < 2) {
+            const nextRetry = retryCount + 1;
+            console.log(`Nouvelle tentative (${nextRetry}/3) dans 2 secondes...`);
+            setRetryCount(nextRetry);
+            setTimeout(() => {
+              if (isMounted) {
+                fetchingRef.current = false;
+                fetchContents();
+              }
+            }, 2000);
+          } else {
+            fetchingRef.current = false;
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          fetchingRef.current = false;
+        }
+      }
+    }
+
+    fetchContents();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [getContentsByType, retryCount, trending.length, latest.length]);
+
+  const renderContentSection = (title: string, contents: Content[]) => {
+    if (contents.length === 0) return null;
+    
+    return (
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold mb-4">{title}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {contents.map(content => (
+            <ContentCard key={content.id} content={content} />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600 mb-4"></div>
+          <p className="text-gray-600">Chargement des contenus...</p>
         </div>
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           <p>{error}</p>
         </div>
+        <button 
+          onClick={() => {
+            fetchingRef.current = false;
+            lastFetchTimeRef.current = 0;
+            setRetryCount(retryCount + 1);
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+        >
+          Réessayer
+        </button>
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Contenu à la une */}
-      {featuredContent && (
-        <div className="relative mb-12 rounded-lg overflow-hidden shadow-lg">
-          <img 
-            src={featuredContent.imageUrl} 
-            alt={featuredContent.title} 
-            className="w-full h-96 object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
-          <div className="absolute bottom-0 left-0 p-6">
-            <h1 className="text-4xl font-bold text-white mb-2">{featuredContent.title}</h1>
-            <p className="text-white mb-4 max-w-xl">{featuredContent.description.substring(0, 150)}...</p>
-            <Link 
-              to={`/watch/${featuredContent.id}`}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md inline-block font-medium"
-            >
-              Regarder maintenant
-            </Link>
-          </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Bienvenue sur NetflixClone</h1>
+        <p className="text-gray-600 mt-2">Découvrez notre sélection de films et séries</p>
+      </div>
+
+      {trending.length === 0 && latest.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-600 text-lg">Aucun contenu disponible pour le moment.</p>
+          <button 
+            onClick={() => {
+              fetchingRef.current = false;
+              lastFetchTimeRef.current = 0;
+              setRetryCount(retryCount + 1);
+            }}
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+          >
+            Actualiser
+          </button>
         </div>
+      ) : (
+        <>
+          {renderContentSection('Tendances', trending)}
+          {renderContentSection('Ajouts récents', latest)}
+        </>
       )}
-      
-      {/* Nouvelles sorties */}
-      <div className="mb-10">
-        <h2 className="text-2xl font-bold mb-4">Nouvelles sorties</h2>
-        {newReleases.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {newReleases.map(content => (
-              <ContentCard key={content.id} content={content} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">Aucun contenu disponible</p>
-        )}
-      </div>
-      
-      {/* Populaires sur Streaming App */}
-      <div className="mb-10">
-        <h2 className="text-2xl font-bold mb-4">Populaires</h2>
-        {popular.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {popular.map(content => (
-              <ContentCard key={content.id} content={content} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500">Aucun contenu disponible</p>
-        )}
-      </div>
     </div>
   );
 };

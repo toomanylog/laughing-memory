@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useContent } from '../hooks/useContent.ts';
 import ContentCard from '../components/ContentCard.tsx';
 import { Content } from '../types/index.ts';
@@ -9,12 +9,22 @@ const SeriesPage: React.FC = () => {
   const [loadingSeries, setLoadingSeries] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const fetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
   useEffect(() => {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
 
+    // Éviter les appels répétés trop fréquents
+    const now = Date.now();
+    if (fetchingRef.current || (now - lastFetchTimeRef.current < 10000 && series.length > 0)) {
+      return;
+    }
+
     async function fetchSeries() {
+      // Marquer comme en cours de récupération
+      fetchingRef.current = true;
       setLoadingSeries(true);
       
       // Timeout pour éviter un chargement infini
@@ -29,6 +39,7 @@ const SeriesPage: React.FC = () => {
             setFetchError("Impossible de charger les séries. Veuillez réessayer plus tard.");
           }
           setLoadingSeries(false);
+          fetchingRef.current = false;
         }
       }, 8000);
 
@@ -38,6 +49,7 @@ const SeriesPage: React.FC = () => {
         
         if (isMounted) {
           clearTimeout(timeoutId);
+          lastFetchTimeRef.current = Date.now();
           
           if (seriesData.length > 0) {
             console.log(`${seriesData.length} séries récupérées avec succès`);
@@ -67,14 +79,20 @@ const SeriesPage: React.FC = () => {
               console.log(`Nouvelle tentative (${nextRetry}/3) dans 2 secondes...`);
               setRetryCount(nextRetry);
               setTimeout(() => {
-                if (isMounted) fetchSeries();
+                if (isMounted) {
+                  fetchingRef.current = false;
+                  fetchSeries();
+                }
               }, 2000);
+            } else {
+              fetchingRef.current = false;
             }
           }
         }
       } finally {
         if (isMounted) {
           setLoadingSeries(false);
+          fetchingRef.current = false;
         }
       }
     }
@@ -85,7 +103,7 @@ const SeriesPage: React.FC = () => {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [contents, getContentsByType, retryCount]);
+  }, [contents, getContentsByType, retryCount, series.length]);
 
   if (loading || loadingSeries) {
     return (
@@ -105,7 +123,11 @@ const SeriesPage: React.FC = () => {
           <p>{error || fetchError}</p>
         </div>
         <button 
-          onClick={() => setRetryCount(retryCount + 1)}
+          onClick={() => {
+            fetchingRef.current = false;
+            lastFetchTimeRef.current = 0;
+            setRetryCount(retryCount + 1);
+          }}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
         >
           Réessayer
@@ -124,7 +146,11 @@ const SeriesPage: React.FC = () => {
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg">Aucune série disponible pour le moment.</p>
           <button 
-            onClick={() => setRetryCount(retryCount + 1)}
+            onClick={() => {
+              fetchingRef.current = false;
+              lastFetchTimeRef.current = 0;
+              setRetryCount(retryCount + 1);
+            }}
             className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
           >
             Actualiser
