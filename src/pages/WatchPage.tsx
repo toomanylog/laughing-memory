@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Container, Typography, Button, CircularProgress, List, ListItem, ListItemText, ListItemButton, Paper } from '@mui/material';
 import { useContent } from '../hooks/useContent.ts';
 import { Content, Episode } from '../types/index.ts';
-import EmbedVideoPlayer from '../components/EmbedVideoPlayer.tsx';
+import EmbedVideoPlayer from '../components/EmbedVideoPlayer';
 
 const WatchPage: React.FC = () => {
   const { contentId, seasonId, episodeId } = useParams<{ contentId: string, seasonId?: string, episodeId?: string }>();

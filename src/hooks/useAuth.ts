@@ -1,131 +1,175 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext, createContext, ReactNode } from 'react';
 import { 
   getAuth, 
+  onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  User,
-  Auth
+  signOut as firebaseSignOut,
+  User as FirebaseUser
 } from 'firebase/auth';
-import { app } from '../firebase';
+import { ref, get, set } from 'firebase/database';
+import { db } from '../firebase.ts';
+import { User } from '../types/index.ts';
 
-// Type simplifiés pour l'utilisateur
-interface AuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-}
-
-interface AuthHookReturn {
-  user: AuthUser | null;
+interface AuthContextType {
+  user: User | null;
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-/**
- * Hook d'authentification simplifié
- */
-export const useAuth = (): AuthHookReturn => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const auth: Auth = getAuth(app);
+  const auth = getAuth();
 
-  // Convertir l'utilisateur Firebase en utilisateur simplifié
-  const formatUser = (user: User | null): AuthUser | null => {
-    if (!user) return null;
-    
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-    };
-  };
-
-  // Surveiller les changements d'état d'authentification
-  useEffect(() => {
-    setLoading(true);
-    
-    const unsubscribe = onAuthStateChanged(auth, 
-      (firebaseUser) => {
-        setUser(formatUser(firebaseUser));
-        setLoading(false);
-      }, 
-      (error) => {
-        console.error('Erreur d\'authentification:', error);
-        setError(error.message);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [auth]);
-
-  // Connexion
-  const signIn = async (email: string, password: string): Promise<void> => {
+  // Fonction pour récupérer les données utilisateur complètes depuis la base de données
+  const fetchUserData = async (firebaseUser: FirebaseUser): Promise<User | null> => {
     try {
-      setLoading(true);
-      setError(null);
-      await signInWithEmailAndPassword(auth, email, password);
-      // L'utilisateur sera mis à jour via onAuthStateChanged
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
+      const userRef = ref(db, `users/${firebaseUser.uid}`);
+      const snapshot = await get(userRef);
+      
+      if (snapshot.exists()) {
+        return snapshot.val() as User;
       } else {
-        setError("Erreur de connexion");
+        // Si l'utilisateur n'existe pas dans la base de données, créer un nouvel utilisateur
+        const newUser: User = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          displayName: firebaseUser.displayName || '',
+          photoURL: firebaseUser.photoURL || '',
+          createdAt: Date.now(),
+          history: [],
+          role: 'user'
+        };
+        
+        // Enregistrer le nouvel utilisateur dans la base de données
+        await set(userRef, newUser);
+        return newUser;
       }
-      setLoading(false);
-      throw error;
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données utilisateur:', error);
+      return null;
     }
   };
 
-  // Inscription
-  const signUp = async (email: string, password: string): Promise<void> => {
-    try {
+  // Détecter les changements d'état d'authentification
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      setError(null);
-      await createUserWithEmailAndPassword(auth, email, password);
-      // L'utilisateur sera mis à jour via onAuthStateChanged
+      
+      if (firebaseUser) {
+        // Utilisateur connecté
+        try {
+          const userData = await fetchUserData(firebaseUser);
+          setUser(userData);
+        } catch (error) {
+          console.error('Erreur lors de la récupération des données utilisateur:', error);
+        }
+      } else {
+        // Utilisateur déconnecté
+        setUser(null);
+      }
+      
+      setLoading(false);
+    });
+    
+    // Nettoyer l'abonnement à la déconnexion
+    return () => unsubscribe();
+  }, [auth]);
+
+  // Connexion d'un utilisateur existant
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userData = await fetchUserData(userCredential.user);
+      setUser(userData);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Erreur d'inscription");
+        setError('Une erreur est survenue lors de la connexion');
       }
-      setLoading(false);
       throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Création d'un nouvel utilisateur
+  const signUp = async (email: string, password: string, displayName: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Créer l'utilisateur dans la base de données
+      const newUser: User = {
+        uid: userCredential.user.uid,
+        email: email,
+        displayName: displayName,
+        photoURL: '',
+        createdAt: Date.now(),
+        history: [],
+        role: 'user'
+      };
+      
+      await set(ref(db, `users/${newUser.uid}`), newUser);
+      setUser(newUser);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Une erreur est survenue lors de la création du compte');
+      }
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   // Déconnexion
-  const logout = async (): Promise<void> => {
-    if (!auth.currentUser) return;
+  const signOut = async () => {
+    setLoading(true);
     
     try {
-      await signOut(auth);
+      await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("Erreur de déconnexion");
+        setError('Une erreur est survenue lors de la déconnexion');
       }
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  return {
-    user,
-    loading,
-    error,
-    signIn,
-    signUp,
-    logout
-  };
+  return (
+    <AuthContext.Provider value={{ user, loading, error, signIn, signUp, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export default useAuth; 
+// Hook personnalisé pour utiliser le contexte d'authentification
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error("useAuth doit être utilisé au sein d'un AuthProvider");
+  }
+  
+  return context;
+}; 

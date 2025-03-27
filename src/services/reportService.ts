@@ -1,6 +1,7 @@
 import { ref, push, set, get, query, orderByChild, equalTo, update } from 'firebase/database';
 import { db } from '../firebase.ts';
 import { VideoReport } from '../types/index.ts';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Enregistrer un nouveau signalement de source vidéo
@@ -177,5 +178,139 @@ export const reviewReport = async (reportId: string): Promise<boolean> => {
   } catch (error) {
     console.error("Erreur lors de la révision du signalement:", error);
     return false;
+  }
+};
+
+/**
+ * Service pour signaler et gérer les sources vidéo défectueuses
+ */
+export const reportService = {
+  /**
+   * Signaler une source vidéo défectueuse
+   * @param contentId ID du contenu
+   * @param sourceId ID de la source vidéo
+   * @param userId ID de l'utilisateur (si connecté)
+   * @param reason Raison du signalement
+   * @returns L'ID du rapport créé
+   */
+  async reportVideoSource(contentId: string, sourceId: string, userId: string = 'anonymous', reason: string): Promise<string> {
+    try {
+      // Vérifier si un rapport similaire existe déjà
+      const existingReport = await this.checkExistingReport(contentId, sourceId, userId);
+      
+      if (existingReport) {
+        return existingReport;
+      }
+      
+      // Création d'un nouveau rapport
+      const reportId = uuidv4();
+      const report: VideoReport = {
+        id: reportId,
+        contentId,
+        sourceId,
+        userId,
+        reason,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+      
+      // Enregistrer le rapport dans la base de données
+      const reportsRef = ref(db, 'reports');
+      await push(reportsRef, report);
+      
+      // Mettre à jour le compteur de signalements de la source
+      const contentRef = ref(db, `content/${contentId}`);
+      const contentSnapshot = await get(contentRef);
+      
+      if (contentSnapshot.exists()) {
+        const content = contentSnapshot.val();
+        
+        // Mettre à jour les sources vidéo
+        if (content.videoSources) {
+          const updatedSources = content.videoSources.map((source: any) => {
+            if (source.id === sourceId) {
+              return {
+                ...source,
+                reportCount: (source.reportCount || 0) + 1,
+                isWorking: false
+              };
+            }
+            return source;
+          });
+          
+          await update(contentRef, { videoSources: updatedSources });
+        }
+      }
+      
+      return reportId;
+    } catch (error) {
+      console.error('Erreur lors du signalement de la source vidéo:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Vérifier si un rapport similaire existe déjà
+   * @param contentId ID du contenu
+   * @param sourceId ID de la source vidéo
+   * @param userId ID de l'utilisateur
+   * @returns L'ID du rapport existant, sinon null
+   */
+  async checkExistingReport(contentId: string, sourceId: string, userId: string): Promise<string | null> {
+    try {
+      const reportsRef = ref(db, 'reports');
+      const userReportsQuery = query(
+        reportsRef,
+        orderByChild('userId'),
+        equalTo(userId)
+      );
+      
+      const snapshot = await get(userReportsQuery);
+      
+      if (snapshot.exists()) {
+        const reports = snapshot.val();
+        
+        for (const key in reports) {
+          const report = reports[key];
+          
+          if (report.contentId === contentId && report.sourceId === sourceId) {
+            return report.id;
+          }
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erreur lors de la vérification des rapports existants:', error);
+      return null;
+    }
+  },
+  
+  /**
+   * Obtenir tous les rapports pour un contenu spécifique
+   * @param contentId ID du contenu
+   * @returns Liste des rapports
+   */
+  async getReportsByContent(contentId: string): Promise<VideoReport[]> {
+    try {
+      const reportsRef = ref(db, 'reports');
+      const contentReportsQuery = query(
+        reportsRef,
+        orderByChild('contentId'),
+        equalTo(contentId)
+      );
+      
+      const snapshot = await get(contentReportsQuery);
+      
+      if (snapshot.exists()) {
+        const reports = snapshot.val();
+        return Object.values(reports);
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Erreur lors de la récupération des rapports:', error);
+      return [];
+    }
   }
 }; 
