@@ -160,11 +160,6 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Bienvenue sur Lokum</h1>
-        <p className="text-gray-600 mt-2">Découvrez notre sélection de films et séries</p>
-      </div>
-
       {trending.length === 0 && latest.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg">Aucun contenu disponible pour le moment.</p>
