@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ref, set, get } from 'firebase/database';
 import { db } from '../firebase.ts';
-import { useAuth } from './useAuth.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 import { UserProgress } from '../types/index.ts';
 
 // Clé pour stocker la progression localement
@@ -20,16 +20,16 @@ interface LocalProgress {
  * Hook pour gérer la progression du visionnage
  */
 export function useWatchProgress(contentId?: string, seasonId?: string, episodeId?: string) {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const [progress, setProgress] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Fonction pour récupérer la progression
   const fetchProgress = useCallback(async (cId: string, sId?: string, eId?: string): Promise<number | null> => {
-    if (user) {
+    if (currentUser) {
       // Utilisateur connecté - récupérer depuis Firebase
       try {
-        const progressRef = ref(db, `progress/${user.uid}/${cId}`);
+        const progressRef = ref(db, `progress/${currentUser.uid}/${cId}`);
         const snapshot = await get(progressRef);
         
         if (snapshot.exists()) {
@@ -72,7 +72,7 @@ export function useWatchProgress(contentId?: string, seasonId?: string, episodeI
     }
     
     return null;
-  }, [user]);
+  }, [currentUser]);
 
   // Récupérer la progression depuis Firebase ou stockage local
   useEffect(() => {
@@ -102,7 +102,7 @@ export function useWatchProgress(contentId?: string, seasonId?: string, episodeI
     }
     
     loadProgress();
-  }, [contentId, user, seasonId, episodeId, fetchProgress]);
+  }, [contentId, currentUser, seasonId, episodeId, fetchProgress]);
 
   // Fonction pour récupérer la progression (version externe)
   const getProgress = useCallback(async (cId: string, sId?: string, eId?: string): Promise<number> => {
@@ -120,11 +120,11 @@ export function useWatchProgress(contentId?: string, seasonId?: string, episodeI
     
     setProgress(newProgress);
     
-    if (user) {
+    if (currentUser) {
       // Enregistrer dans Firebase
       try {
         const progressData: UserProgress = {
-          userId: user.uid,
+          userId: currentUser.uid,
           contentId: contentId,
           progress: newProgress,
           lastWatchedAt: Date.now(),
@@ -132,7 +132,7 @@ export function useWatchProgress(contentId?: string, seasonId?: string, episodeI
           seasonId: seasonId
         };
         
-        set(ref(db, `progress/${user.uid}/${contentId}`), progressData)
+        set(ref(db, `progress/${currentUser.uid}/${contentId}`), progressData)
           .catch(error => {
             console.error('Erreur lors de l\'enregistrement de la progression:', error);
           });
@@ -164,7 +164,7 @@ export function useWatchProgress(contentId?: string, seasonId?: string, episodeI
         console.error('Erreur lors de l\'enregistrement local de la progression:', error);
       }
     }
-  }, [user, contentId, seasonId, episodeId]);
+  }, [currentUser, contentId, seasonId, episodeId]);
 
   return { 
     progress, 

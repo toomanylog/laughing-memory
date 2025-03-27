@@ -13,6 +13,10 @@ export interface Content {
   featuredId?: number;
   createdAt: number;
   updatedAt: number;
+  titleJp?: string;    // Titre japonais original
+  titleEn?: string;    // Titre anglais alternatif
+  status?: 'ongoing' | 'completed' | 'upcoming';  // Statut de diffusion
+  studio?: string;     // Studio d'animation
 }
 
 /**
@@ -47,6 +51,8 @@ export interface Season {
   title: string;
   number: number;      // Numéro de la saison
   episodes: Episode[];
+  year?: number;       // Année de diffusion de la saison
+  status?: 'ongoing' | 'completed';  // Statut de diffusion
 }
 
 export interface Episode {
@@ -58,6 +64,9 @@ export interface Episode {
   videoUrl?: string;         // Ancien champ, maintenu pour compatibilité
   videoSources?: VideoSource[]; // Nouveau champ pour les sources multiples
   thumbnail?: string;
+  airDate?: number;    // Date de diffusion
+  titleJp?: string;    // Titre japonais original
+  titleEn?: string;    // Titre anglais alternatif
 }
 
 export interface UserProgress {

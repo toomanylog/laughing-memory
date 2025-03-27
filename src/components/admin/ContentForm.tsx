@@ -23,6 +23,11 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
   const [genreInput, setGenreInput] = useState('');
   const [duration, setDuration] = useState<number | undefined>(undefined);
   const [seasons, setSeasons] = useState<Season[]>([]);
+  // Nouveaux champs pour les animés
+  const [titleJp, setTitleJp] = useState('');
+  const [titleEn, setTitleEn] = useState('');
+  const [status, setStatus] = useState<'ongoing' | 'completed' | 'upcoming'>('ongoing');
+  const [studio, setStudio] = useState('');
   
   // Initialiser le formulaire avec les données existantes si on modifie
   useEffect(() => {
@@ -36,6 +41,12 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       setGenre(content.genre || []);
       setDuration(content.duration);
       setSeasons(content.seasons || []);
+      
+      // Champs pour les animés
+      setTitleJp(content.titleJp || '');
+      setTitleEn(content.titleEn || '');
+      setStatus(content.status || 'ongoing');
+      setStudio(content.studio || '');
       
       // Si des sources vidéo sont présentes, les convertir en texte pour l'éditeur
       if (content.videoSources && content.videoSources.length > 0) {
@@ -146,6 +157,21 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
     setSeasons(updatedSeasons);
   };
   
+  // Mettre à jour une saison
+  const handleSeasonChange = (seasonId: string, field: keyof Season, value: string | number) => {
+    const updatedSeasons = seasons.map(season => {
+      if (season.id === seasonId) {
+        return {
+          ...season,
+          [field]: value
+        };
+      }
+      return season;
+    });
+    
+    setSeasons(updatedSeasons);
+  };
+  
   // Analyser les sources vidéo lors de la mise à jour du champ
   const handleVideoSourcesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const input = e.target.value;
@@ -164,7 +190,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       return false;
     }
     
-    if (type === 'series' && (!seasons.length || seasons.some(season => !season.episodes.length))) {
+    if ((type === 'series' || type === 'anime') && (!seasons.length || seasons.some(season => !season.episodes.length))) {
       return false;
     }
     
@@ -196,9 +222,16 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       releaseYear,
       genre: genre || [],
       ...(type === 'movie' ? { duration } : { seasons }),
+      // Ajouter les champs pour les animés si nécessaire
+      ...(type === 'anime' ? { 
+        titleJp, 
+        titleEn, 
+        status, 
+        studio 
+      } : {})
     };
     
-    onSubmit(contentData as Omit<Content, 'id' | 'createdAt' | 'updatedAt'>);
+    onSubmit(contentData as any);
   };
   
   return (
@@ -422,127 +455,263 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
         </div>
       </div>
       
-      {/* Saisons et épisodes (pour les séries) */}
-      {type === 'series' && (
-        <div className="space-y-4 border border-gray-300 rounded-md p-4">
+      {/* Rendu des saisons et épisodes pour les séries et animés */}
+      {(type === 'series' || type === 'anime') && (
+        <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Saisons et épisodes</h3>
+            <h3 className="text-lg font-medium">Saisons</h3>
             <button
               type="button"
               onClick={handleAddSeason}
-              className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
             >
-              Ajouter une saison
+              + Ajouter une saison
             </button>
           </div>
           
-          {/* Liste des saisons */}
           {seasons.length === 0 ? (
-            <p className="text-gray-500">Aucune saison ajoutée. Cliquez sur "Ajouter une saison" pour commencer.</p>
+            <p className="text-gray-500">Aucune saison ajoutée. Cliquez sur le bouton pour ajouter une saison.</p>
           ) : (
             <div className="space-y-6">
-              {seasons.map((season) => (
-                <div key={season.id} className="border border-gray-200 rounded-md p-4">
+              {seasons.map((season, seasonIndex) => (
+                <div key={season.id} className="border rounded-lg p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-medium">Saison {season.number}</h4>
-                      <input
-                        type="text"
-                        value={season.title}
-                        onChange={(e) => {
-                          const updatedSeasons = seasons.map(s => {
-                            if (s.id === season.id) {
-                              return { ...s, title: e.target.value };
-                            }
-                            return s;
-                          });
-                          setSeasons(updatedSeasons);
-                        }}
-                        className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                        placeholder="Titre de la saison"
-                      />
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Titre de la saison</label>
+                        <input
+                          type="text"
+                          value={season.title}
+                          onChange={(e) => handleSeasonChange(season.id, 'title', e.target.value)}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Numéro</label>
+                        <input
+                          type="number"
+                          value={season.number}
+                          onChange={(e) => handleSeasonChange(season.id, 'number', parseInt(e.target.value) || 0)}
+                          className="mt-1 block w-20 border border-gray-300 rounded-md shadow-sm p-2"
+                          min="1"
+                        />
+                      </div>
+                      {type === 'anime' && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Année</label>
+                            <input
+                              type="number"
+                              value={season.year || new Date().getFullYear()}
+                              onChange={(e) => handleSeasonChange(season.id, 'year', parseInt(e.target.value) || new Date().getFullYear())}
+                              className="mt-1 block w-28 border border-gray-300 rounded-md shadow-sm p-2"
+                              min="1900"
+                              max={new Date().getFullYear() + 10}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Statut</label>
+                            <select
+                              value={season.status || 'completed'}
+                              onChange={(e) => handleSeasonChange(season.id, 'status', e.target.value)}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                            >
+                              <option value="ongoing">En cours</option>
+                              <option value="completed">Terminé</option>
+                            </select>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleAddEpisode(season.id)}
-                        className="bg-green-600 text-white rounded-md px-3 py-1 text-sm hover:bg-green-700 transition-colors"
-                      >
-                        Ajouter un épisode
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSeason(season.id)}
-                        className="bg-red-600 text-white rounded-md px-3 py-1 text-sm hover:bg-red-700 transition-colors"
-                      >
-                        Supprimer la saison
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSeason(season.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      Supprimer
+                    </button>
                   </div>
                   
-                  {/* Liste des épisodes */}
-                  {season.episodes.length === 0 ? (
-                    <p className="text-gray-500 text-sm">Aucun épisode ajouté.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {season.episodes.map((episode) => (
-                        <div key={episode.id} className="border border-gray-100 rounded-md p-3 bg-gray-50">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="space-y-1 flex-grow">
-                              <div className="flex items-center space-x-2">
-                                <span className="font-medium text-sm">Épisode {episode.number}:</span>
-                                <input
-                                  type="text"
-                                  value={episode.title}
-                                  onChange={(e) => handleEpisodeChange(season.id, episode.id, 'title', e.target.value)}
-                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm flex-grow"
-                                  placeholder="Titre de l'épisode"
-                                />
-                              </div>
-                              
-                              <textarea
-                                value={episode.description}
-                                onChange={(e) => handleEpisodeChange(season.id, episode.id, 'description', e.target.value)}
-                                className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full"
-                                placeholder="Description de l'épisode"
-                                rows={2}
-                              />
-                              
-                              <div className="grid grid-cols-2 gap-2">
-                                <input
-                                  type="text"
-                                  value={episode.videoUrl || ''}
-                                  onChange={(e) => handleEpisodeChange(season.id, episode.id, 'videoUrl', e.target.value)}
-                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                                  placeholder="URL de la vidéo"
-                                />
-                                <input
-                                  type="number"
-                                  value={episode.duration || ''}
-                                  onChange={(e) => handleEpisodeChange(season.id, episode.id, 'duration', parseInt(e.target.value))}
-                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                                  placeholder="Durée (min)"
-                                  min="1"
-                                />
-                              </div>
-                            </div>
-                            
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveEpisode(season.id, episode.id)}
-                              className="bg-red-100 text-red-600 rounded-md px-2 py-1 text-sm hover:bg-red-200 transition-colors ml-2"
-                            >
-                              Supprimer
-                            </button>
+                  <h4 className="text-md font-medium mb-2">Épisodes</h4>
+                  <div className="space-y-4 mb-4">
+                    {season.episodes.map((episode, episodeIndex) => (
+                      <div key={episode.id} className="border rounded p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <h5 className="font-medium">{`Épisode ${episode.number}`}</h5>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveEpisode(season.id, episode.id)}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Titre</label>
+                            <input
+                              type="text"
+                              value={episode.title}
+                              onChange={(e) => handleEpisodeChange(season.id, episode.id, 'title', e.target.value)}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Numéro</label>
+                            <input
+                              type="number"
+                              value={episode.number}
+                              onChange={(e) => handleEpisodeChange(season.id, episode.id, 'number', parseInt(e.target.value) || 0)}
+                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                              min="1"
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        
+                        {type === 'anime' && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Titre japonais</label>
+                              <input
+                                type="text"
+                                value={episode.titleJp || ''}
+                                onChange={(e) => handleEpisodeChange(season.id, episode.id, 'titleJp', e.target.value)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                placeholder="タイトル"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Titre anglais</label>
+                              <input
+                                type="text"
+                                value={episode.titleEn || ''}
+                                onChange={(e) => handleEpisodeChange(season.id, episode.id, 'titleEn', e.target.value)}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                placeholder="English Title"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">Date de diffusion</label>
+                              <input
+                                type="date"
+                                value={episode.airDate ? new Date(episode.airDate).toISOString().split('T')[0] : ''}
+                                onChange={(e) => {
+                                  const date = e.target.value ? new Date(e.target.value).getTime() : undefined;
+                                  handleEpisodeChange(season.id, episode.id, 'airDate', date || 0);
+                                }}
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700">Description</label>
+                          <textarea
+                            value={episode.description}
+                            onChange={(e) => handleEpisodeChange(season.id, episode.id, 'description', e.target.value)}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                            rows={2}
+                          ></textarea>
+                        </div>
+                        
+                        <div className="mb-2">
+                          <label className="block text-sm font-medium text-gray-700">URL Vidéo</label>
+                          <input
+                            type="text"
+                            value={episode.videoUrl || ''}
+                            onChange={(e) => handleEpisodeChange(season.id, episode.id, 'videoUrl', e.target.value)}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                            placeholder="https://..."
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Durée (minutes)</label>
+                          <input
+                            type="number"
+                            value={episode.duration || 0}
+                            onChange={(e) => handleEpisodeChange(season.id, episode.id, 'duration', parseInt(e.target.value) || 0)}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => handleAddEpisode(season.id)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                  >
+                    + Ajouter un épisode
+                  </button>
                 </div>
               ))}
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Champs pour les animés */}
+      {type === 'anime' && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Informations spécifiques aux animés</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Titre japonais</label>
+              <input
+                type="text"
+                value={titleJp}
+                onChange={(e) => setTitleJp(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                placeholder="タイトル"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Titre anglais</label>
+              <input
+                type="text"
+                value={titleEn}
+                onChange={(e) => setTitleEn(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                placeholder="English Title"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Statut</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'ongoing' | 'completed' | 'upcoming')}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              >
+                <option value="ongoing">En cours</option>
+                <option value="completed">Terminé</option>
+                <option value="upcoming">À venir</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Studio</label>
+              <input
+                type="text"
+                value={studio}
+                onChange={(e) => setStudio(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                placeholder="Studio d'animation"
+              />
+            </div>
+          </div>
         </div>
       )}
       
