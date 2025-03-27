@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useContent } from '../hooks/useContent';
-import { Content, Episode } from '../types';
-import VideoPlayer from '../components/VideoPlayer';
+import { useContent } from '../hooks/useContent.ts';
+import { Content, Episode } from '../types/index.ts';
+import VideoPlayer from '../components/VideoPlayer.tsx';
 
 const WatchPage: React.FC = () => {
   const { contentId, seasonId, episodeId } = useParams<{ 
