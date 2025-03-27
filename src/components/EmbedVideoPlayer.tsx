@@ -4,7 +4,7 @@ import { Box, Typography, CircularProgress, Paper, Button, Select, MenuItem, For
 import { VideoSource, Content, Episode } from '../types/index.ts';
 import { reportVideoSource } from '../services/reportService.ts';
 import { useWatchProgress } from '../hooks/useWatchProgress.ts';
-import { useAuth } from '../hooks/useAuth.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
 
 interface EmbedVideoPlayerProps {
   content: Content;
@@ -20,7 +20,7 @@ const EmbedVideoPlayer: React.FC<EmbedVideoPlayerProps> = ({
   episodeId 
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { currentUser, userData } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<VideoSource | null>(null);
@@ -108,7 +108,7 @@ const EmbedVideoPlayer: React.FC<EmbedVideoPlayerProps> = ({
 
   // Soumettre le signalement
   const handleReportSubmit = async () => {
-    if (!selectedSource || !user) return;
+    if (!selectedSource || !currentUser) return;
     
     setReportSubmitting(true);
     
@@ -116,7 +116,7 @@ const EmbedVideoPlayer: React.FC<EmbedVideoPlayerProps> = ({
       await reportVideoSource(
         content.id,
         selectedSource.id,
-        user.uid,
+        currentUser.uid,
         reportReason
       );
       
