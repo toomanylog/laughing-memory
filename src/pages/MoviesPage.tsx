@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useContent } from '../hooks/useContent';
-import ContentCard from '../components/ContentCard';
-import { Content } from '../types';
+import { useContent } from '../hooks/useContent.ts';
+import ContentCard from '../components/ContentCard.tsx';
+import { Content } from '../types/index.ts';
 
 const MoviesPage: React.FC = () => {
   const { contents, loading, error, getContentsByType } = useContent();

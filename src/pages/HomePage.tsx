@@ -1,17 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useContent } from '../hooks/useContent';
-import ContentCard from '../components/ContentCard';
+import ContentCard from '../components/ContentCard.tsx';
+import { useContent } from '../hooks/useContent.ts';
+import { Content } from '../types/index.ts';
 
 const HomePage: React.FC = () => {
   const { contents, loading, error } = useContent();
+  const [featuredContent, setFeaturedContent] = useState<Content | null>(null);
+  const [newReleases, setNewReleases] = useState<Content[]>([]);
+  const [popular, setPopular] = useState<Content[]>([]);
   
-  // Tri des contenus par date de mise à jour (les plus récents d'abord)
-  const sortedContents = [...contents].sort((a, b) => b.updatedAt - a.updatedAt);
-  
-  // Séparation des films et séries
-  const movies = sortedContents.filter(content => content.type === 'movie').slice(0, 6);
-  const series = sortedContents.filter(content => content.type === 'series').slice(0, 6);
+  useEffect(() => {
+    if (contents.length > 0) {
+      // Pour la démonstration, on sélectionne un contenu aléatoire comme contenu à la une
+      const randomIndex = Math.floor(Math.random() * contents.length);
+      setFeaturedContent(contents[randomIndex]);
+      
+      // Trier les contenus par date de création (plus récents en premier)
+      const sortedByDate = [...contents].sort((a, b) => b.createdAt - a.createdAt);
+      setNewReleases(sortedByDate.slice(0, 6)); // 6 nouveautés
+      
+      // Sélectionner quelques contenus pour la section "populaire"
+      // Dans une application réelle, on utiliserait des données de visionnage/notation
+      const shuffled = [...contents].sort(() => 0.5 - Math.random());
+      setPopular(shuffled.slice(0, 6)); // 6 contenus populaires
+    }
+  }, [contents]);
   
   if (loading) {
     return (
@@ -35,67 +49,55 @@ const HomePage: React.FC = () => {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Hero section */}
-      <div className="flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-r from-black to-gray-800 text-white rounded-lg mb-12">
-        <h1 className="text-4xl font-bold text-center mb-4">Bienvenue sur Laughing Memory</h1>
-        <p className="text-xl text-center mb-8 max-w-2xl">
-          Une plateforme streaming gratuite pour découvrir des films et séries en illimité
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Link 
-            to="/movies" 
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md font-medium"
-          >
-            Explorer les films
-          </Link>
-          <Link 
-            to="/series" 
-            className="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-md font-medium"
-          >
-            Découvrir les séries
-          </Link>
+      {/* Contenu à la une */}
+      {featuredContent && (
+        <div className="relative mb-12 rounded-lg overflow-hidden shadow-lg">
+          <img 
+            src={featuredContent.imageUrl} 
+            alt={featuredContent.title} 
+            className="w-full h-96 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+          <div className="absolute bottom-0 left-0 p-6">
+            <h1 className="text-4xl font-bold text-white mb-2">{featuredContent.title}</h1>
+            <p className="text-white mb-4 max-w-xl">{featuredContent.description.substring(0, 150)}...</p>
+            <Link 
+              to={`/watch/${featuredContent.id}`}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-md inline-block font-medium"
+            >
+              Regarder maintenant
+            </Link>
+          </div>
         </div>
+      )}
+      
+      {/* Nouvelles sorties */}
+      <div className="mb-10">
+        <h2 className="text-2xl font-bold mb-4">Nouvelles sorties</h2>
+        {newReleases.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {newReleases.map(content => (
+              <ContentCard key={content.id} content={content} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500">Aucun contenu disponible</p>
+        )}
       </div>
       
-      {/* Films section */}
-      <section className="mb-12">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Films populaires</h2>
-          <Link to="/movies" className="text-red-600 hover:text-red-700">
-            Voir tous les films
-          </Link>
-        </div>
-        
-        {movies.length === 0 ? (
-          <p className="text-gray-600">Aucun film disponible pour le moment.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {movies.map(movie => (
-              <ContentCard key={movie.id} content={movie} />
+      {/* Populaires sur Streaming App */}
+      <div className="mb-10">
+        <h2 className="text-2xl font-bold mb-4">Populaires</h2>
+        {popular.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {popular.map(content => (
+              <ContentCard key={content.id} content={content} />
             ))}
           </div>
-        )}
-      </section>
-      
-      {/* Séries section */}
-      <section>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Séries populaires</h2>
-          <Link to="/series" className="text-red-600 hover:text-red-700">
-            Voir toutes les séries
-          </Link>
-        </div>
-        
-        {series.length === 0 ? (
-          <p className="text-gray-600">Aucune série disponible pour le moment.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-            {series.map(serie => (
-              <ContentCard key={serie.id} content={serie} />
-            ))}
-          </div>
+          <p className="text-gray-500">Aucun contenu disponible</p>
         )}
-      </section>
+      </div>
     </div>
   );
 };
