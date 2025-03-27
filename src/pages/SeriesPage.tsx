@@ -11,19 +11,25 @@ const SeriesPage: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
   const fetchingRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
+  const initialLoadAttemptedRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
 
-    // Éviter les appels répétés trop fréquents
+    // Éviter les appels répétés trop fréquents, mais s'assurer qu'une première tentative est faite
     const now = Date.now();
-    if (fetchingRef.current || (now - lastFetchTimeRef.current < 10000 && series.length > 0)) {
+    if (fetchingRef.current || (initialLoadAttemptedRef.current && now - lastFetchTimeRef.current < 10000 && series.length > 0)) {
+      console.log("Éviter le rechargement répété des séries - fetchingRef:", fetchingRef.current, "initialLoadAttempted:", initialLoadAttemptedRef.current);
       return;
     }
 
+    // Marquer que nous avons tenté un chargement initial
+    initialLoadAttemptedRef.current = true;
+
     async function fetchSeries() {
       // Marquer comme en cours de récupération
+      console.log("Début de récupération des séries");
       fetchingRef.current = true;
       setLoadingSeries(true);
       
@@ -41,7 +47,7 @@ const SeriesPage: React.FC = () => {
           setLoadingSeries(false);
           fetchingRef.current = false;
         }
-      }, 8000);
+      }, 10000);
 
       try {
         console.log("Tentative de récupération des séries...");
@@ -103,7 +109,7 @@ const SeriesPage: React.FC = () => {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [contents, getContentsByType, retryCount, series.length]);
+  }, [contents, getContentsByType, retryCount]);
 
   if (loading || loadingSeries) {
     return (
@@ -126,6 +132,7 @@ const SeriesPage: React.FC = () => {
           onClick={() => {
             fetchingRef.current = false;
             lastFetchTimeRef.current = 0;
+            initialLoadAttemptedRef.current = false;
             setRetryCount(retryCount + 1);
           }}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
@@ -149,6 +156,7 @@ const SeriesPage: React.FC = () => {
             onClick={() => {
               fetchingRef.current = false;
               lastFetchTimeRef.current = 0;
+              initialLoadAttemptedRef.current = false;
               setRetryCount(retryCount + 1);
             }}
             className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"

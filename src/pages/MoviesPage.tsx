@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useContent } from '../hooks/useContent.ts';
 import ContentCard from '../components/ContentCard.tsx';
 import { Content } from '../types/index.ts';
@@ -9,12 +9,28 @@ const MoviesPage: React.FC = () => {
   const [loadingMovies, setLoadingMovies] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const fetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const initialLoadAttemptedRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
 
+    // Éviter les appels répétés trop fréquents, mais s'assurer qu'une première tentative est faite
+    const now = Date.now();
+    if (fetchingRef.current || (initialLoadAttemptedRef.current && now - lastFetchTimeRef.current < 10000 && movies.length > 0)) {
+      console.log("Éviter le rechargement répété des films - fetchingRef:", fetchingRef.current, "initialLoadAttempted:", initialLoadAttemptedRef.current);
+      return;
+    }
+
+    // Marquer que nous avons tenté un chargement initial
+    initialLoadAttemptedRef.current = true;
+
     async function fetchMovies() {
+      // Marquer comme en cours de récupération
+      console.log("Début de récupération des films");
+      fetchingRef.current = true;
       setLoadingMovies(true);
       
       // Timeout pour éviter un chargement infini
@@ -29,8 +45,9 @@ const MoviesPage: React.FC = () => {
             setFetchError("Impossible de charger les films. Veuillez réessayer plus tard.");
           }
           setLoadingMovies(false);
+          fetchingRef.current = false;
         }
-      }, 8000);
+      }, 10000);
 
       try {
         console.log("Tentative de récupération des films...");
@@ -38,6 +55,7 @@ const MoviesPage: React.FC = () => {
         
         if (isMounted) {
           clearTimeout(timeoutId);
+          lastFetchTimeRef.current = Date.now();
           
           if (moviesData.length > 0) {
             console.log(`${moviesData.length} films récupérés avec succès`);
@@ -67,14 +85,20 @@ const MoviesPage: React.FC = () => {
               console.log(`Nouvelle tentative (${nextRetry}/3) dans 2 secondes...`);
               setRetryCount(nextRetry);
               setTimeout(() => {
-                if (isMounted) fetchMovies();
+                if (isMounted) {
+                  fetchingRef.current = false;
+                  fetchMovies();
+                }
               }, 2000);
+            } else {
+              fetchingRef.current = false;
             }
           }
         }
       } finally {
         if (isMounted) {
           setLoadingMovies(false);
+          fetchingRef.current = false;
         }
       }
     }
@@ -105,7 +129,12 @@ const MoviesPage: React.FC = () => {
           <p>{error || fetchError}</p>
         </div>
         <button 
-          onClick={() => setRetryCount(retryCount + 1)}
+          onClick={() => {
+            fetchingRef.current = false;
+            lastFetchTimeRef.current = 0;
+            initialLoadAttemptedRef.current = false;
+            setRetryCount(retryCount + 1);
+          }}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
         >
           Réessayer
@@ -124,7 +153,12 @@ const MoviesPage: React.FC = () => {
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg">Aucun film disponible pour le moment.</p>
           <button 
-            onClick={() => setRetryCount(retryCount + 1)}
+            onClick={() => {
+              fetchingRef.current = false;
+              lastFetchTimeRef.current = 0;
+              initialLoadAttemptedRef.current = false;
+              setRetryCount(retryCount + 1);
+            }}
             className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
           >
             Actualiser

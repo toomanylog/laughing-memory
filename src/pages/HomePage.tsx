@@ -13,19 +13,25 @@ const HomePage: React.FC = () => {
   const [retryCount, setRetryCount] = useState(0);
   const fetchingRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
+  const initialLoadAttemptedRef = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
     let timeoutId: NodeJS.Timeout;
 
-    // Éviter les appels répétés trop fréquents
+    // Éviter les appels répétés trop fréquents, mais s'assurer qu'une première tentative est faite
     const now = Date.now();
-    if (fetchingRef.current || (now - lastFetchTimeRef.current < 10000 && trending.length > 0 && latest.length > 0)) {
+    if (fetchingRef.current || (initialLoadAttemptedRef.current && now - lastFetchTimeRef.current < 10000 && trending.length > 0 && latest.length > 0)) {
+      console.log("Éviter le rechargement répété - fetchingRef:", fetchingRef.current, "initialLoadAttempted:", initialLoadAttemptedRef.current);
       return;
     }
 
+    // Marquer que nous avons tenté un chargement initial
+    initialLoadAttemptedRef.current = true;
+
     async function fetchContents() {
       // Marquer comme en cours de récupération
+      console.log("Début de récupération des contenus pour la page d'accueil");
       fetchingRef.current = true;
       setLoading(true);
       
@@ -37,7 +43,7 @@ const HomePage: React.FC = () => {
           setError("Impossible de charger les contenus. Veuillez réessayer plus tard.");
           fetchingRef.current = false;
         }
-      }, 8000);
+      }, 10000);
 
       try {
         console.log("Tentative de récupération des contenus...");
@@ -48,6 +54,8 @@ const HomePage: React.FC = () => {
         if (isMounted) {
           clearTimeout(timeoutId);
           lastFetchTimeRef.current = Date.now();
+          
+          console.log("Données reçues - Movies:", moviesData.length, "Series:", seriesData.length);
           
           // Combinaison de tous les contenus
           const allContents = [...moviesData, ...seriesData];
@@ -101,7 +109,7 @@ const HomePage: React.FC = () => {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, [getContentsByType, retryCount, trending.length, latest.length]);
+  }, [getContentsByType, retryCount]);
 
   const renderContentSection = (title: string, contents: Content[]) => {
     if (contents.length === 0) return null;
@@ -139,6 +147,7 @@ const HomePage: React.FC = () => {
           onClick={() => {
             fetchingRef.current = false;
             lastFetchTimeRef.current = 0;
+            initialLoadAttemptedRef.current = false;
             setRetryCount(retryCount + 1);
           }}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
@@ -163,6 +172,7 @@ const HomePage: React.FC = () => {
             onClick={() => {
               fetchingRef.current = false;
               lastFetchTimeRef.current = 0;
+              initialLoadAttemptedRef.current = false;
               setRetryCount(retryCount + 1);
             }}
             className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
