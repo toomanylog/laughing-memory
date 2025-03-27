@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Content, Episode } from '../types/index.ts';
 import { useWatchProgress } from '../hooks/useWatchProgress.ts';
 
@@ -9,260 +9,210 @@ interface VideoPlayerProps {
   autoPlay?: boolean;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ content, episode, seasonId, autoPlay = false }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  content,
+  episode,
+  seasonId,
+  autoPlay = false
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [progress, setProgress] = useState(0);
-  const [videoError, setVideoError] = useState<string | null>(null);
-  const [loadingVideo, setLoadingVideo] = useState(true);
+  const [volume, setVolume] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Déterminer l'URL de la vidéo à lire (épisode ou contenu)
+  const videoUrl = episode?.videoUrl || content.videoUrl;
   
-  const { 
-    saveProgress, 
-    getProgress,
-    loading: progressLoading
-  } = useWatchProgress();
-  
-  const videoUrl = episode ? episode.videoUrl : content.videoUrl;
-  
-  // Récupérer la progression précédente
+  // Utiliser le hook pour suivre la progression
+  const { progress, saveProgress } = useWatchProgress(
+    content.id,
+    seasonId,
+    episode?.id
+  );
+
+  // Initialiser le lecteur vidéo
   useEffect(() => {
-    const loadSavedProgress = async () => {
-      if (progressLoading) return;
+    if (videoRef.current) {
+      // Définir le volume
+      videoRef.current.volume = volume;
       
-      try {
-        const savedProgress = await getProgress(content.id, seasonId, episode?.id);
-        if (savedProgress > 0 && videoRef.current) {
-          console.log(`Progression sauvegardée: ${Math.floor(savedProgress)}%`);
-          const timeToSet = (savedProgress / 100) * videoRef.current.duration;
-          
-          if (!isNaN(timeToSet) && isFinite(timeToSet)) {
-            videoRef.current.currentTime = timeToSet;
-          }
-        }
-      } catch (err) {
-        console.error('Erreur lors du chargement de la progression:', err);
-      }
-    };
-    
-    loadSavedProgress();
-  }, [content.id, episode?.id, seasonId, getProgress, progressLoading]);
-  
-  // Configuration de la vidéo
-  useEffect(() => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
-    
-    setVideoError(null);
-    setLoadingVideo(true);
-    
-    // Gestion de l'autoplay
-    if (autoPlay) {
-      try {
-        console.log('Tentative de lecture automatique...');
-        const playPromise = videoElement.play();
+      // Charger la vidéo
+      videoRef.current.load();
+      
+      // Auto-play si activé
+      if (autoPlay) {
+        const playPromise = videoRef.current.play();
         
         if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('Lecture automatique réussie');
-              setIsPlaying(true);
-            })
-            .catch((err) => {
-              console.warn('La lecture automatique a échoué:', err);
-              setIsPlaying(false);
-              // Ne pas considérer l'échec d'autoplay comme une erreur
-              // c'est généralement une restriction du navigateur
-            });
+          playPromise.catch(error => {
+            console.error('Erreur de lecture automatique:', error);
+            // Souvent dû aux restrictions des navigateurs sur l'autoplay
+            setIsPlaying(false);
+          });
         }
-      } catch (err) {
-        console.error('Erreur lors de la tentative de lecture automatique:', err);
-        setIsPlaying(false);
       }
     }
-    
-    // Événements de la vidéo
-    const handleTimeUpdate = () => {
-      if (!videoElement) return;
-      
-      setCurrentTime(videoElement.currentTime);
-      const newProgress = (videoElement.currentTime / videoElement.duration) * 100;
-      setProgress(isNaN(newProgress) ? 0 : newProgress);
-      
-      // Enregistrer la progression tous les 5 secondes
-      if (Math.floor(videoElement.currentTime) % 5 === 0) {
-        saveProgress(
-          content.id,
-          newProgress,
-          seasonId,
-          episode?.id
-        );
+  }, [videoUrl, autoPlay, volume]);
+
+  // Reprendre la lecture à partir du point sauvegardé
+  useEffect(() => {
+    if (videoRef.current && progress > 0 && !isNaN(progress)) {
+      const timeToSeek = (progress / 100) * videoRef.current.duration;
+      if (!isNaN(timeToSeek) && isFinite(timeToSeek)) {
+        videoRef.current.currentTime = timeToSeek;
       }
-    };
-    
-    const handleLoadedMetadata = () => {
-      if (!videoElement) return;
-      setDuration(videoElement.duration);
-      setLoadingVideo(false);
-    };
-    
-    const handleError = () => {
-      setLoadingVideo(false);
+    }
+  }, [progress, videoRef.current?.duration]);
+
+  // Gestionnaires d'événements
+  const handlePlay = () => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.error('Erreur de lecture:', error);
+        setError('La lecture automatique n\'est pas autorisée par votre navigateur.');
+      });
+    }
+    setIsPlaying(true);
+  };
+
+  const handlePause = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    setIsPlaying(false);
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
       
-      // Extraire plus d'informations sur l'erreur
-      let errorMessage = "Erreur inconnue lors du chargement de la vidéo";
+      // Calculer le pourcentage de progression
+      const percent = (videoRef.current.currentTime / videoRef.current.duration) * 100;
       
-      if (videoElement.error) {
-        switch(videoElement.error.code) {
-          case 1:
-            errorMessage = "Le chargement de la vidéo a été interrompu";
-            break;
-          case 2:
-            errorMessage = "Erreur réseau lors du chargement de la vidéo";
-            break;
-          case 3:
-            errorMessage = "Problème de décodage de la vidéo";
-            break;
-          case 4:
-            errorMessage = "Format de vidéo non supporté ou vidéo non disponible";
-            break;
-          default:
-            errorMessage = `Erreur ${videoElement.error.code}: ${videoElement.error.message}`;
-        }
+      // Sauvegarder tous les 5 secondes pour ne pas surcharger
+      if (Math.floor(videoRef.current.currentTime) % 5 === 0) {
+        saveProgress(percent);
       }
-      
-      console.error(`Erreur lors du chargement de la vidéo: ${videoUrl}`, videoElement.error);
-      setVideoError(errorMessage);
-    };
-    
-    const handleCanPlay = () => {
-      setLoadingVideo(false);
-    };
-    
-    // Ajout des écouteurs d'événements
-    videoElement.addEventListener('timeupdate', handleTimeUpdate);
-    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-    videoElement.addEventListener('error', handleError);
-    videoElement.addEventListener('canplay', handleCanPlay);
-    
-    return () => {
-      // Retrait des écouteurs d'événements
-      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
-      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      videoElement.removeEventListener('error', handleError);
-      videoElement.removeEventListener('canplay', handleCanPlay);
-    };
-  }, [content.id, episode?.id, seasonId, saveProgress, autoPlay, videoUrl]);
-  
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      setLoading(false);
+    }
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolume(newVolume);
+    if (videoRef.current) {
+      videoRef.current.volume = newVolume;
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const seekTime = parseFloat(e.target.value);
+    setCurrentTime(seekTime);
+    if (videoRef.current) {
+      videoRef.current.currentTime = seekTime;
+    }
+  };
+
+  const handleVideoError = () => {
+    setLoading(false);
+    setError('Une erreur est survenue lors du chargement de la vidéo. Veuillez réessayer ultérieurement.');
+  };
+
   // Formater le temps (secondes -> MM:SS)
-  const formatTime = (time: number) => {
+  const formatTime = (time: number): string => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
-  
-  // Gestion des contrôles personnalisés
-  const handlePlayPause = () => {
-    if (!videoRef.current) return;
-    
-    if (isPlaying) {
-      videoRef.current.pause();
-    } else {
-      videoRef.current.play().catch(err => {
-        console.error('Erreur lors de la lecture:', err);
-      });
-    }
-    
-    setIsPlaying(!isPlaying);
-  };
-  
-  // Gestion de la barre de progression
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!videoRef.current) return;
-    
-    const newProgress = parseFloat(e.target.value);
-    const newTime = (newProgress / 100) * duration;
-    
-    videoRef.current.currentTime = newTime;
-    setProgress(newProgress);
-  };
-  
-  if (videoError) {
+
+  if (error) {
     return (
-      <div className="rounded-lg overflow-hidden bg-gray-900 flex flex-col items-center justify-center h-96">
-        <div className="text-white text-center p-6">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="text-xl font-bold mb-2">Erreur de lecture</h3>
-          <p className="mb-4">{videoError}</p>
-          <p className="text-gray-400 text-sm mb-4">URL: {videoUrl}</p>
-          <button 
-            onClick={() => {
-              setVideoError(null);
-              setLoadingVideo(true);
-              // Forcer le rechargement de la vidéo
-              if (videoRef.current) {
-                videoRef.current.load();
-              }
-            }}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-          >
-            Réessayer
-          </button>
-        </div>
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <p className="font-bold">Erreur de lecture</p>
+        <p>{error}</p>
       </div>
     );
   }
-  
+
   return (
-    <div className="rounded-lg overflow-hidden bg-gray-900 relative">
-      {loadingVideo && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-        </div>
-      )}
+    <div className="overflow-hidden rounded-lg shadow-lg bg-black">
+      {/* Lecteur vidéo */}
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+          </div>
+        )}
+        
+        <video
+          ref={videoRef}
+          className="w-full h-auto max-h-[70vh]"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onError={handleVideoError}
+          onClick={isPlaying ? handlePause : handlePlay}
+          poster={episode?.thumbnail || content.imageUrl}
+          playsInline
+          preload="metadata"
+        >
+          <source src={videoUrl} type="video/mp4" />
+          Votre navigateur ne prend pas en charge la lecture vidéo HTML5.
+        </video>
+      </div>
       
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        className="w-full h-auto"
-        playsInline
-        preload="metadata"
-        crossOrigin="anonymous"
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-      />
-      
-      <div className="bg-gray-900 text-white p-3">
-        <div className="flex items-center space-x-3">
-          <button onClick={handlePlayPause} className="focus:outline-none">
+      {/* Contrôles personnalisés */}
+      <div className="bg-gray-900 text-white p-4">
+        <div className="flex items-center mb-2">
+          <button
+            onClick={isPlaying ? handlePause : handlePlay}
+            className="mr-3 text-xl focus:outline-none"
+          >
             {isPlaying ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <span>⏸️</span>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <span>▶️</span>
             )}
           </button>
           
-          <span className="text-sm">{formatTime(currentTime)}</span>
+          <div className="text-sm mr-3">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
           
           <input
             type="range"
             min="0"
-            max="100"
-            value={progress}
-            onChange={handleProgressChange}
-            className="flex-grow h-1.5 bg-gray-700 rounded appearance-none focus:outline-none cursor-pointer"
+            max={duration || 0}
+            value={currentTime}
+            onChange={handleSeek}
+            className="flex-grow h-2 bg-gray-700 rounded-full appearance-none"
           />
           
-          <span className="text-sm">{formatTime(duration)}</span>
+          <div className="ml-3 flex items-center">
+            <span className="mr-2">🔊</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={handleVolumeChange}
+              className="w-20 h-2 bg-gray-700 rounded-full appearance-none"
+            />
+          </div>
         </div>
+        
+        <h2 className="text-lg font-bold">
+          {episode ? `${content.title} - ${episode.title}` : content.title}
+        </h2>
       </div>
     </div>
   );

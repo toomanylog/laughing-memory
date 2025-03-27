@@ -45,6 +45,7 @@ export interface VideoReport {
 export interface Season {
   id: string;
   title: string;
+  number: number;      // Numéro de la saison
   episodes: Episode[];
 }
 
@@ -52,6 +53,7 @@ export interface Episode {
   id: string;
   title: string;
   description: string;
+  number: number;      // Numéro de l'épisode
   duration?: number;
   videoUrl?: string;         // Ancien champ, maintenu pour compatibilité
   videoSources?: VideoSource[]; // Nouveau champ pour les sources multiples

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Content, Season, Episode } from '../../types';
+import { Content, Season, Episode, VideoSource } from '../../types';
+import { parseVideoSources } from '../../utils/videoSourceParser';
 
 interface ContentFormProps {
   content?: Content;
@@ -14,6 +15,8 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoSourcesInput, setVideoSourcesInput] = useState('');
+  const [videoSources, setVideoSources] = useState<VideoSource[]>([]);
   const [type, setType] = useState<'movie' | 'series'>('movie');
   const [releaseYear, setReleaseYear] = useState<number>(new Date().getFullYear());
   const [genre, setGenre] = useState<string[]>([]);
@@ -24,15 +27,24 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
   // Initialiser le formulaire avec les données existantes si on modifie
   useEffect(() => {
     if (content) {
-      setTitle(content.title);
-      setDescription(content.description);
-      setImageUrl(content.imageUrl);
-      setVideoUrl(content.videoUrl);
-      setType(content.type);
-      setReleaseYear(content.releaseYear);
+      setTitle(content.title || '');
+      setDescription(content.description || '');
+      setImageUrl(content.imageUrl || '');
+      setVideoUrl(content.videoUrl || '');
+      setType(content.type || 'movie');
+      setReleaseYear(content.releaseYear || new Date().getFullYear());
       setGenre(content.genre || []);
       setDuration(content.duration);
       setSeasons(content.seasons || []);
+      
+      // Si des sources vidéo sont présentes, les convertir en texte pour l'éditeur
+      if (content.videoSources && content.videoSources.length > 0) {
+        const sourcesText = content.videoSources
+          .map(source => `@${source.embedUrl}`)
+          .join('\n');
+        setVideoSourcesInput(sourcesText);
+        setVideoSources(content.videoSources);
+      }
     }
   }, [content]);
   
@@ -53,6 +65,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
   const handleAddSeason = () => {
     const newSeason: Season = {
       id: `season-${Date.now()}`,
+      title: `Saison ${seasons.length + 1}`,
       number: seasons.length + 1,
       episodes: []
     };
@@ -133,9 +146,17 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
     setSeasons(updatedSeasons);
   };
   
+  // Analyser les sources vidéo lors de la mise à jour du champ
+  const handleVideoSourcesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const input = e.target.value;
+    setVideoSourcesInput(input);
+    const sources = parseVideoSources(input);
+    setVideoSources(sources);
+  };
+  
   // Validation du formulaire
   const validateForm = (): boolean => {
-    if (!title || !description || !imageUrl || !videoUrl || !releaseYear) {
+    if (!title || !description || !imageUrl || (!videoUrl && videoSources.length === 0) || !releaseYear) {
       return false;
     }
     
@@ -150,6 +171,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
     // S'assurer que genre est un tableau
     if (!genre || !Array.isArray(genre)) {
       setGenre([]);
+      return false;
     }
     
     return true;
@@ -169,6 +191,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       description,
       imageUrl,
       videoUrl,
+      videoSources,
       type,
       releaseYear,
       genre: genre || [],
@@ -243,50 +266,40 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             required
           />
+          {imageUrl && (
+            <div className="mt-2">
+              <img src={imageUrl} alt="Aperçu" className="max-h-40 object-contain" />
+            </div>
+          )}
         </div>
         
-        {/* URL de la vidéo */}
+        {/* Type de contenu */}
         <div>
-          <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700">
-            URL de la vidéo <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-gray-700">
+            Type de contenu <span className="text-red-500">*</span>
           </label>
-          <input
-            id="videoUrl"
-            type="url"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            required
-          />
-        </div>
-      </div>
-      
-      {/* Type de contenu */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Type de contenu
-        </label>
-        <div className="mt-2 space-x-4">
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              value="movie"
-              checked={type === 'movie'}
-              onChange={() => setType('movie')}
-              className="form-radio h-4 w-4 text-red-600"
-            />
-            <span className="ml-2">Film</span>
-          </label>
-          <label className="inline-flex items-center">
-            <input
-              type="radio"
-              value="series"
-              checked={type === 'series'}
-              onChange={() => setType('series')}
-              className="form-radio h-4 w-4 text-red-600"
-            />
-            <span className="ml-2">Série</span>
-          </label>
+          <div className="mt-1 flex space-x-4">
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                value="movie"
+                checked={type === 'movie'}
+                onChange={() => setType('movie')}
+                className="h-4 w-4 text-red-600"
+              />
+              <span className="ml-2">Film</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                value="series"
+                checked={type === 'series'}
+                onChange={() => setType('series')}
+                className="h-4 w-4 text-red-600"
+              />
+              <span className="ml-2">Série</span>
+            </label>
+          </div>
         </div>
       </div>
       
@@ -302,161 +315,215 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
             value={duration || ''}
             onChange={(e) => setDuration(parseInt(e.target.value))}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-            required
             min="1"
+            required={type === 'movie'}
           />
         </div>
       )}
       
+      {/* URL de la vidéo (traditionnel) */}
+      <div>
+        <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700">
+          URL de la vidéo
+        </label>
+        <input
+          id="videoUrl"
+          type="url"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          URL directe de la vidéo (sera utilisée si aucune source n'est spécifiée ci-dessous)
+        </p>
+      </div>
+      
+      {/* Sources vidéo */}
+      <div>
+        <label htmlFor="videoSources" className="block text-sm font-medium text-gray-700">
+          Sources vidéo (préféré)
+        </label>
+        <textarea
+          id="videoSources"
+          value={videoSourcesInput}
+          onChange={handleVideoSourcesChange}
+          rows={5}
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 font-mono text-sm"
+          placeholder="@https://my.mail.ru/mail/example/video/_myvideo/123.html"
+        />
+        <p className="text-sm text-gray-500 mt-1">
+          Entrez chaque URL de vidéo sur une ligne distincte. Préfixez avec @ pour les URLs mail.ru, youtube, etc.
+        </p>
+        
+        {/* Prévisualisation des sources */}
+        {videoSources.length > 0 && (
+          <div className="mt-2 bg-gray-50 p-3 rounded-md">
+            <h4 className="font-medium text-sm mb-2">Sources vidéo détectées ({videoSources.length}):</h4>
+            <ul className="space-y-1">
+              {videoSources.map((source, index) => (
+                <li key={source.id || index} className="text-sm text-gray-600">
+                  {source.provider} - {source.embedUrl.substring(0, 50)}...
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+      
       {/* Genres */}
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Genres
+          Genres <span className="text-red-500">*</span>
         </label>
-        <div className="flex items-center mt-1">
+        <div className="flex">
           <input
             type="text"
             value={genreInput}
             onChange={(e) => setGenreInput(e.target.value)}
-            className="flex-grow border border-gray-300 rounded-l-md shadow-sm p-2"
-            placeholder="Ajouter un genre"
+            className="mt-1 flex-grow border border-gray-300 rounded-l-md shadow-sm p-2"
+            placeholder="Action, Comédie, Drame..."
           />
           <button
             type="button"
             onClick={handleAddGenre}
-            className="bg-blue-500 text-white px-4 py-2 rounded-r-md"
+            className="mt-1 bg-blue-600 text-white rounded-r-md px-4 py-2 hover:bg-blue-700 transition-colors"
           >
             Ajouter
           </button>
         </div>
+        
+        {/* Affichage des genres */}
         <div className="mt-2 flex flex-wrap gap-2">
-          {(genre || []).map((g, index) => (
-            <div key={index} className="bg-gray-100 rounded-full px-3 py-1 flex items-center">
-              <span>{g}</span>
+          {genre.map((g, index) => (
+            <span
+              key={index}
+              className="bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm flex items-center"
+            >
+              {g}
               <button
                 type="button"
                 onClick={() => handleRemoveGenre(g)}
-                className="ml-2 text-red-500"
+                className="ml-2 text-gray-600 hover:text-red-600 focus:outline-none"
               >
                 &times;
               </button>
-            </div>
+            </span>
           ))}
         </div>
       </div>
       
       {/* Saisons et épisodes (pour les séries) */}
       {type === 'series' && (
-        <div className="border-t pt-6">
-          <div className="flex justify-between items-center mb-4">
+        <div className="space-y-4 border border-gray-300 rounded-md p-4">
+          <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium">Saisons et épisodes</h3>
             <button
               type="button"
               onClick={handleAddSeason}
-              className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm"
+              className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm hover:bg-blue-700 transition-colors"
             >
               Ajouter une saison
             </button>
           </div>
           
+          {/* Liste des saisons */}
           {seasons.length === 0 ? (
-            <p className="text-gray-500 italic">Aucune saison ajoutée</p>
+            <p className="text-gray-500">Aucune saison ajoutée. Cliquez sur "Ajouter une saison" pour commencer.</p>
           ) : (
             <div className="space-y-6">
-              {seasons.map((season, seasonIndex) => (
-                <div key={season.id} className="border rounded-md p-4">
+              {seasons.map((season) => (
+                <div key={season.id} className="border border-gray-200 rounded-md p-4">
                   <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium">Saison {season.number}</h4>
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-medium">Saison {season.number}</h4>
+                      <input
+                        type="text"
+                        value={season.title}
+                        onChange={(e) => {
+                          const updatedSeasons = seasons.map(s => {
+                            if (s.id === season.id) {
+                              return { ...s, title: e.target.value };
+                            }
+                            return s;
+                          });
+                          setSeasons(updatedSeasons);
+                        }}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                        placeholder="Titre de la saison"
+                      />
+                    </div>
                     <div className="flex space-x-2">
                       <button
                         type="button"
                         onClick={() => handleAddEpisode(season.id)}
-                        className="bg-green-500 text-white px-2 py-1 rounded-md text-sm"
+                        className="bg-green-600 text-white rounded-md px-3 py-1 text-sm hover:bg-green-700 transition-colors"
                       >
                         Ajouter un épisode
                       </button>
                       <button
                         type="button"
                         onClick={() => handleRemoveSeason(season.id)}
-                        className="bg-red-500 text-white px-2 py-1 rounded-md text-sm"
+                        className="bg-red-600 text-white rounded-md px-3 py-1 text-sm hover:bg-red-700 transition-colors"
                       >
-                        Supprimer
+                        Supprimer la saison
                       </button>
                     </div>
                   </div>
                   
+                  {/* Liste des épisodes */}
                   {season.episodes.length === 0 ? (
-                    <p className="text-gray-500 italic">Aucun épisode ajouté</p>
+                    <p className="text-gray-500 text-sm">Aucun épisode ajouté.</p>
                   ) : (
-                    <div className="space-y-4">
-                      {season.episodes.map((episode, episodeIndex) => (
-                        <div key={episode.id} className="border rounded-md p-3 bg-gray-50">
-                          <div className="flex justify-between items-start mb-2">
-                            <h5 className="font-medium">Épisode {episode.number}</h5>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveEpisode(season.id, episode.id)}
-                              className="text-red-500"
-                            >
-                              Supprimer
-                            </button>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 gap-3">
-                            <div>
-                              <label className="block text-sm text-gray-700">
-                                Titre
-                              </label>
-                              <input
-                                type="text"
-                                value={episode.title}
-                                onChange={(e) => handleEpisodeChange(season.id, episode.id, 'title', e.target.value)}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
-                                required
-                              />
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm text-gray-700">
-                                Description
-                              </label>
-                              <textarea
-                                value={episode.description}
-                                onChange={(e) => handleEpisodeChange(season.id, episode.id, 'description', e.target.value)}
-                                rows={2}
-                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
-                                required
-                              />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-sm text-gray-700">
-                                  URL Vidéo
-                                </label>
+                    <div className="space-y-3">
+                      {season.episodes.map((episode) => (
+                        <div key={episode.id} className="border border-gray-100 rounded-md p-3 bg-gray-50">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="space-y-1 flex-grow">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-medium text-sm">Épisode {episode.number}:</span>
                                 <input
-                                  type="url"
-                                  value={episode.videoUrl}
-                                  onChange={(e) => handleEpisodeChange(season.id, episode.id, 'videoUrl', e.target.value)}
-                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
-                                  required
+                                  type="text"
+                                  value={episode.title}
+                                  onChange={(e) => handleEpisodeChange(season.id, episode.id, 'title', e.target.value)}
+                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm flex-grow"
+                                  placeholder="Titre de l'épisode"
                                 />
                               </div>
                               
-                              <div>
-                                <label className="block text-sm text-gray-700">
-                                  Durée (minutes)
-                                </label>
+                              <textarea
+                                value={episode.description}
+                                onChange={(e) => handleEpisodeChange(season.id, episode.id, 'description', e.target.value)}
+                                className="border border-gray-300 rounded-md px-2 py-1 text-sm w-full"
+                                placeholder="Description de l'épisode"
+                                rows={2}
+                              />
+                              
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  value={episode.videoUrl || ''}
+                                  onChange={(e) => handleEpisodeChange(season.id, episode.id, 'videoUrl', e.target.value)}
+                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                  placeholder="URL de la vidéo"
+                                />
                                 <input
                                   type="number"
                                   value={episode.duration || ''}
                                   onChange={(e) => handleEpisodeChange(season.id, episode.id, 'duration', parseInt(e.target.value))}
-                                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-sm"
-                                  required
+                                  className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                                  placeholder="Durée (min)"
                                   min="1"
                                 />
                               </div>
                             </div>
+                            
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEpisode(season.id, episode.id)}
+                              className="bg-red-100 text-red-600 rounded-md px-2 py-1 text-sm hover:bg-red-200 transition-colors ml-2"
+                            >
+                              Supprimer
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -470,21 +537,21 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       )}
       
       {/* Boutons d'action */}
-      <div className="flex justify-end space-x-3 pt-6 border-t">
+      <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
           disabled={isSubmitting}
         >
           Annuler
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 border border-transparent rounded-md shadow-sm text-sm font-medium text-white disabled:opacity-50"
+          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Enregistrement...' : content ? 'Mettre à jour' : 'Créer'}
+          {isSubmitting ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>
     </form>
