@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ref, get } from 'firebase/database';
-import { db } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
-import { Content, UserProgress } from '../types';
+import { db } from '../firebase.ts';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { Content, UserProgress } from '../types/index.ts';
 
 interface WatchHistoryItem {
   progress: UserProgress;

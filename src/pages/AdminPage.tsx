@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useContent } from '../hooks/useContent';
-import { Content } from '../types';
-import ContentForm from '../components/admin/ContentForm';
+import { useAuth } from '../contexts/AuthContext.tsx';
+import { useContent } from '../hooks/useContent.ts';
+import { Content } from '../types/index.ts';
+import ContentForm from '../components/admin/ContentForm.tsx';
 
 const AdminPage: React.FC = () => {
   const { currentUser, userData } = useAuth();
