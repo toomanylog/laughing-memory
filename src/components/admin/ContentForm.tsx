@@ -30,7 +30,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       setVideoUrl(content.videoUrl);
       setType(content.type);
       setReleaseYear(content.releaseYear);
-      setGenre(content.genre);
+      setGenre(content.genre || []);
       setDuration(content.duration);
       setSeasons(content.seasons || []);
     }
@@ -147,6 +147,11 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       return false;
     }
     
+    // S'assurer que genre est un tableau
+    if (!genre || !Array.isArray(genre)) {
+      setGenre([]);
+    }
+    
     return true;
   };
   
@@ -166,7 +171,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
       videoUrl,
       type,
       releaseYear,
-      genre,
+      genre: genre || [],
       ...(type === 'movie' ? { duration } : { seasons }),
     };
     
@@ -325,7 +330,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
           </button>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
-          {genre.map((g, index) => (
+          {(genre || []).map((g, index) => (
             <div key={index} className="bg-gray-100 rounded-full px-3 py-1 flex items-center">
               <span>{g}</span>
               <button
