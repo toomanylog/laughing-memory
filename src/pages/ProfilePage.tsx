@@ -5,11 +5,16 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Content, UserProgress } from '../types';
 
+interface WatchHistoryItem {
+  progress: UserProgress;
+  content: Content;
+}
+
 const ProfilePage: React.FC = () => {
   const { currentUser, userData } = useAuth();
   const navigate = useNavigate();
   
-  const [watchHistory, setWatchHistory] = useState<Array<{progress: UserProgress, content: Content}>>([]);
+  const [watchHistory, setWatchHistory] = useState<WatchHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -39,7 +44,7 @@ const ProfilePage: React.FC = () => {
         }
         
         const progressData = progressSnapshot.val();
-        const historyWithContents = [];
+        const historyWithContents: WatchHistoryItem[] = [];
         
         // Pour chaque progression, récupérer les détails du contenu
         for (const contentId in progressData) {
