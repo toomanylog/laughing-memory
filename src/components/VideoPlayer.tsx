@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Content, Episode } from '../types';
-import { useWatchProgress } from '../hooks/useWatchProgress';
+import { Content, Episode } from '../types/index.ts';
+import { useWatchProgress } from '../hooks/useWatchProgress.ts';
 
 interface VideoPlayerProps {
   content: Content;
