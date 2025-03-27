@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ref, set, get } from 'firebase/database';
 import { db } from '../firebase.ts';
-import { useAuth } from '../contexts/AuthContext.tsx';
-import { UserProgress, Content, Episode } from '../types/index.ts';
+import { useAuth } from '../hooks/useAuth';
+import { UserProgress } from '../types/index.ts';
 
 // Clé pour stocker la progression localement
 const LOCAL_STORAGE_KEY = 'watch-progress';
@@ -16,59 +16,28 @@ interface LocalProgress {
   seasonId?: string;
 }
 
-// Version avec tous les paramètres (pour rétrocompatibilité)
-export function useWatchProgress(content?: Content, episode?: Episode, seasonId?: string) {
-  const { currentUser, userData } = useAuth();
+/**
+ * Hook pour gérer la progression du visionnage
+ */
+export function useWatchProgress(contentId?: string, seasonId?: string, episodeId?: string) {
+  const { user } = useAuth();
   const [progress, setProgress] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Récupérer la progression depuis Firebase ou stockage local
-  useEffect(() => {
-    if (!content) {
-      setLoading(false);
-      return;
-    }
-
-    async function loadProgress() {
-      setLoading(true);
-      
-      try {
-        // S'assurer que content est défini avant d'utiliser content.id
-        if (content && content.id) {
-          const progressValue = await fetchProgress(content.id, seasonId, episode?.id);
-          if (progressValue !== null) {
-            setProgress(progressValue);
-          } else {
-            setProgress(0);
-          }
-        } else {
-          setProgress(0);
-        }
-      } catch (error) {
-        console.error('Erreur lors de la récupération de la progression:', error);
-        setProgress(0);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    loadProgress();
-  }, [content, currentUser, userData, episode, seasonId]);
-
   // Fonction pour récupérer la progression
-  const fetchProgress = useCallback(async (contentId: string, seasonId?: string, episodeId?: string): Promise<number | null> => {
-    if (currentUser && userData) {
+  const fetchProgress = useCallback(async (cId: string, sId?: string, eId?: string): Promise<number | null> => {
+    if (user) {
       // Utilisateur connecté - récupérer depuis Firebase
       try {
-        const progressRef = ref(db, `progress/${currentUser.uid}/${contentId}`);
+        const progressRef = ref(db, `progress/${user.uid}/${cId}`);
         const snapshot = await get(progressRef);
         
         if (snapshot.exists()) {
           const userProgress = snapshot.val() as UserProgress;
           
           // Vérifier si on regarde le même épisode (pour les séries)
-          if (episodeId) {
-            if (userProgress.episodeId === episodeId) {
+          if (eId) {
+            if (userProgress.episodeId === eId) {
               return userProgress.progress;
             } else {
               return 0; // Nouvel épisode
@@ -89,9 +58,9 @@ export function useWatchProgress(content?: Content, episode?: Episode, seasonId?
           const localProgressData = JSON.parse(localProgressJSON) as Record<string, LocalProgress>;
           
           // Vérifier si nous avons une entrée pour ce contenu
-          const contentKey = episodeId 
-            ? `${contentId}-${seasonId}-${episodeId}` 
-            : contentId;
+          const contentKey = eId 
+            ? `${cId}-${sId}-${eId}` 
+            : cId;
             
           if (localProgressData[contentKey]) {
             return localProgressData[contentKey].progress;
@@ -103,34 +72,70 @@ export function useWatchProgress(content?: Content, episode?: Episode, seasonId?
     }
     
     return null;
-  }, [currentUser, userData]);
+  }, [user]);
+
+  // Récupérer la progression depuis Firebase ou stockage local
+  useEffect(() => {
+    if (!contentId) {
+      setLoading(false);
+      return;
+    }
+
+    async function loadProgress() {
+      setLoading(true);
+      
+      try {
+        if (contentId) {
+          const progressValue = await fetchProgress(contentId, seasonId, episodeId);
+          if (progressValue !== null) {
+            setProgress(progressValue);
+          } else {
+            setProgress(0);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération de la progression:', error);
+        setProgress(0);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadProgress();
+  }, [contentId, user, seasonId, episodeId, fetchProgress]);
 
   // Fonction pour récupérer la progression (version externe)
-  const getProgress = useCallback(async (contentId: string, seasonId?: string, episodeId?: string): Promise<number> => {
-    const progressValue = await fetchProgress(contentId, seasonId, episodeId);
+  const getProgress = useCallback(async (cId: string, sId?: string, eId?: string): Promise<number> => {
+    const progressValue = await fetchProgress(cId, sId, eId);
     return progressValue ?? 0;
   }, [fetchProgress]);
 
   // Enregistrer la progression
-  const saveProgress = useCallback(async (contentId: string, newProgress: number, seasonId?: string, episodeId?: string) => {
-    // Si on utilise l'ancienne API avec le contenu passé au hook
-    if (content && contentId === content.id) {
-      setProgress(newProgress);
+  const saveProgress = useCallback((newProgress: number) => {
+    // Si aucun ID de contenu, on ne peut pas sauvegarder
+    if (!contentId) {
+      console.error('Tentative de sauvegarde de progression sans ID de contenu spécifié');
+      return;
     }
     
-    if (currentUser) {
+    setProgress(newProgress);
+    
+    if (user) {
       // Enregistrer dans Firebase
       try {
         const progressData: UserProgress = {
-          userId: currentUser.uid,
+          userId: user.uid,
           contentId: contentId,
           progress: newProgress,
           lastWatchedAt: Date.now(),
-          episodeId: episodeId || episode?.id,
-          seasonId: seasonId || (content?.type === 'series' ? seasonId : undefined)
+          episodeId: episodeId,
+          seasonId: seasonId
         };
         
-        await set(ref(db, `progress/${currentUser.uid}/${contentId}`), progressData);
+        set(ref(db, `progress/${user.uid}/${contentId}`), progressData)
+          .catch(error => {
+            console.error('Erreur lors de l\'enregistrement de la progression:', error);
+          });
       } catch (error) {
         console.error('Erreur lors de l\'enregistrement de la progression:', error);
       }
@@ -150,7 +155,7 @@ export function useWatchProgress(content?: Content, episode?: Episode, seasonId?
           contentId: contentId,
           progress: newProgress,
           lastWatchedAt: Date.now(),
-          episodeId: episodeId || episode?.id,
+          episodeId: episodeId,
           seasonId: seasonId
         };
         
@@ -159,20 +164,11 @@ export function useWatchProgress(content?: Content, episode?: Episode, seasonId?
         console.error('Erreur lors de l\'enregistrement local de la progression:', error);
       }
     }
-  }, [currentUser, content, episode]);
-
-  // Pour la rétrocompatibilité - fonction qui prend seulement le nouveau progrès
-  const legacySaveProgress = useCallback((newProgress: number) => {
-    if (content) {
-      saveProgress(content.id, newProgress, seasonId, episode?.id);
-    } else {
-      console.error('Tentative de sauvegarde de progression sans contenu spécifié');
-    }
-  }, [content, saveProgress, seasonId, episode]);
+  }, [user, contentId, seasonId, episodeId]);
 
   return { 
     progress, 
-    saveProgress: content ? legacySaveProgress : saveProgress, 
+    saveProgress, 
     getProgress,
     loading 
   };

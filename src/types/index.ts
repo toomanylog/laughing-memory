@@ -3,30 +3,59 @@ export interface Content {
   title: string;
   description: string;
   imageUrl: string;
-  videoUrl: string;
-  type: 'movie' | 'series';
-  releaseYear: number;
+  type: 'series' | 'movie';
   genre: string[];
-  duration?: number; // Pour les films
-  seasons?: Season[]; // Pour les séries
+  releaseYear: number;
+  videoUrl?: string;
+  videoSources?: VideoSource[];
+  duration?: number;
+  seasons?: Season[];
+  featuredId?: number;
   createdAt: number;
   updatedAt: number;
 }
 
+/**
+ * Source vidéo pour un contenu ou un épisode
+ */
+export interface VideoSource {
+  id: string;
+  provider: string;     // Nom du fournisseur (e.g. "Mail.ru", "VK", "YouTube")
+  embedUrl: string;     // URL d'intégration iframe
+  quality?: string;     // Qualité de la vidéo (HD, 720p, etc.)
+  isWorking?: boolean;  // Si la source fonctionne toujours
+  reportCount?: number; // Nombre de signalements reçus
+}
+
+/**
+ * Signalement de source vidéo
+ */
+export interface VideoReport {
+  id: string;
+  contentId: string;
+  sourceId: string;
+  userId: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'resolved';
+  createdAt: number;
+  resolution?: string;
+  resolvedAt?: number;
+}
+
 export interface Season {
   id: string;
-  number: number;
+  title: string;
   episodes: Episode[];
 }
 
 export interface Episode {
   id: string;
   title: string;
-  number: number;
   description: string;
-  imageUrl?: string;
-  videoUrl: string;
-  duration: number;
+  duration?: number;
+  videoUrl?: string;         // Ancien champ, maintenu pour compatibilité
+  videoSources?: VideoSource[]; // Nouveau champ pour les sources multiples
+  thumbnail?: string;
 }
 
 export interface UserProgress {
