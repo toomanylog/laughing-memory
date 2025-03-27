@@ -47,6 +47,36 @@ const fallbackContent: Content[] = [
     ],
     createdAt: Date.now(),
     updatedAt: Date.now()
+  },
+  {
+    id: 'fallback-anime-1',
+    title: 'Anime de Secours',
+    description: 'Cet anime est affiché lorsque les données Firebase ne sont pas disponibles.',
+    imageUrl: 'https://via.placeholder.com/500x750',
+    videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4',
+    type: 'anime',
+    genre: ['Action', 'Fantaisie'],
+    releaseYear: 2023,
+    duration: 0,
+    seasons: [
+      {
+        id: 'fallback-anime-season-1',
+        number: 1,
+        title: 'Saison 1',
+        episodes: [
+          {
+            id: 'fallback-anime-episode-1',
+            number: 1,
+            title: 'Épisode 1',
+            description: 'Épisode de démonstration pour anime.',
+            duration: 24,
+            videoUrl: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
+          }
+        ]
+      }
+    ],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   }
 ];
 
@@ -145,6 +175,7 @@ export const useContent = () => {
           // Organiser les contenus par type
           newCache.byType['movie'] = contentsList.filter(content => content.type === 'movie');
           newCache.byType['series'] = contentsList.filter(content => content.type === 'series');
+          newCache.byType['anime'] = contentsList.filter(content => content.type === 'anime');
           
           cacheRef.current = newCache;
           setContents(contentsList);

@@ -1,180 +1,195 @@
-import { VideoSource } from "../types";
 import { v4 as uuidv4 } from 'uuid';
+import { VideoSource } from '../types/index.ts';
 
 /**
- * Détecte les URL vidéo et les convertit en sources d'embed
- * @param input String contenant potentiellement des URL vidéo
- * @returns Array de sources vidéo
+ * Utilitaire pour parser et formater les URL vidéo
  */
-export function parseVideoSources(input: string): VideoSource[] {
-  if (!input) return [];
-  
-  const sources: VideoSource[] = [];
-  const lines = input.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-  
-  for (const line of lines) {
-    // Détecter si la ligne commence par @ (formatage spécial)
-    if (line.startsWith('@')) {
-      const url = line.substring(1).trim();
-      const source = createSourceFromUrl(url);
-      if (source) {
-        sources.push(source);
+export const videoSourceParser = {
+  /**
+   * Parse une chaîne de caractères pour extraire des sources vidéo
+   * Format supporté: "@URL_VIDEO" ou JSON au format VideoSource[]
+   * @param input Chaîne à parser
+   * @returns Array de VideoSource ou null si invalide
+   */
+  parseVideoSources(input: string): VideoSource[] | null {
+    if (!input || input.trim() === '') {
+      return null;
+    }
+
+    try {
+      // Si l'entrée commence par "[", essayer de la parser comme JSON
+      if (input.trim().startsWith('[')) {
+        return JSON.parse(input) as VideoSource[];
       }
-    } else if (isValidUrl(line)) {
-      // Si c'est une URL standard
-      const source = createSourceFromUrl(line);
-      if (source) {
-        sources.push(source);
+
+      // Sinon, traiter chaque ligne commençant par @ comme une URL vidéo
+      const sources: VideoSource[] = [];
+      const lines = input.split('\n');
+
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('@')) {
+          const url = trimmedLine.substring(1).trim();
+          if (url) {
+            const source = this.createSourceFromUrl(url);
+            if (source) {
+              sources.push(source);
+            }
+          }
+        }
       }
-    }
-  }
-  
-  return sources;
-}
 
-/**
- * Vérifie si une chaîne est une URL valide
- */
-function isValidUrl(str: string): boolean {
-  try {
-    new URL(str);
-    return true;
-  } catch {
-    return false;
-  }
-}
+      return sources.length > 0 ? sources : null;
+    } catch (error) {
+      console.error('Erreur lors du parsing des sources vidéo:', error);
+      return null;
+    }
+  },
 
-/**
- * Crée une source vidéo à partir d'une URL
- */
-function createSourceFromUrl(url: string): VideoSource | null {
-  try {
-    const parsedUrl = new URL(url);
-    
-    // Mail.ru
-    if (parsedUrl.hostname.includes('mail.ru')) {
-      return createMailRuSource(url);
+  /**
+   * Crée un objet VideoSource à partir d'une URL
+   * @param url URL de la vidéo
+   * @returns Objet VideoSource ou null si URL invalide
+   */
+  createSourceFromUrl(url: string): VideoSource | null {
+    if (!this.isValidUrl(url)) {
+      return null;
     }
-    
-    // YouTube
-    if (parsedUrl.hostname.includes('youtube.com') || parsedUrl.hostname.includes('youtu.be')) {
-      const youtubeSource = createYouTubeSource(url);
-      if (youtubeSource) return youtubeSource;
+
+    // Déterminer le fournisseur à partir de l'URL
+    const provider = this.getProviderFromUrl(url);
+    const embedUrl = this.getEmbedUrl(url, provider);
+
+    if (!embedUrl) {
+      return null;
     }
-    
-    // Dailymotion
-    if (parsedUrl.hostname.includes('dailymotion.com') || parsedUrl.hostname.includes('dai.ly')) {
-      const dailymotionSource = createDailymotionSource(url);
-      if (dailymotionSource) return dailymotionSource;
-    }
-    
-    // Si aucun format spécifique n'est reconnu, essayer un embed direct
+
     return {
       id: uuidv4(),
-      provider: parsedUrl.hostname,
-      embedUrl: url,
+      provider,
+      embedUrl,
       isWorking: true
     };
-  } catch (error) {
-    console.error('Erreur lors du parsing de l\'URL:', error);
-    return null;
-  }
-}
+  },
 
-/**
- * Crée une source Mail.ru
- * Formats:
- * - https://my.mail.ru/mail/user/video/_myvideo/123.html
- * - https://my.mail.ru/mail/user/video/embed/_myvideo/123.html
- */
-function createMailRuSource(url: string): VideoSource {
-  // Si c'est déjà un lien d'embed, l'utiliser directement
-  if (url.includes('/video/embed/')) {
-    return {
-      id: uuidv4(),
-      provider: 'Mail.ru',
-      embedUrl: url,
-      quality: 'Standard',
-      isWorking: true
-    };
-  }
-  
-  // Remplacer /video/ par /video/embed/ pour obtenir l'URL d'embed
-  let embedUrl = url;
-  
-  // Format: https://my.mail.ru/mail/user/video/_myvideo/123.html
-  if (url.includes('/video/')) {
-    embedUrl = url.replace('/video/', '/video/embed/');
-  }
-  
-  return {
-    id: uuidv4(),
-    provider: 'Mail.ru',
-    embedUrl: embedUrl,
-    quality: 'Standard',
-    isWorking: true
-  };
-}
+  /**
+   * Vérifie si une URL est valide
+   * @param url URL à vérifier
+   * @returns true si valide, false sinon
+   */
+  isValidUrl(url: string): boolean {
+    try {
+      new URL(url);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  },
 
-/**
- * Crée une source YouTube
- */
-function createYouTubeSource(url: string): VideoSource | null {
-  let videoId = '';
-  
-  // Format: https://www.youtube.com/watch?v=VIDEO_ID
-  if (url.includes('youtube.com/watch')) {
-    const parsedUrl = new URL(url);
-    videoId = parsedUrl.searchParams.get('v') || '';
-  }
-  
-  // Format: https://youtu.be/VIDEO_ID
-  else if (url.includes('youtu.be/')) {
-    videoId = url.split('youtu.be/')[1].split('?')[0];
-  }
-  
-  if (!videoId) return null;
-  
-  return {
-    id: uuidv4(),
-    provider: 'YouTube',
-    embedUrl: `https://www.youtube.com/embed/${videoId}`,
-    quality: 'HD',
-    isWorking: true
-  };
-}
+  /**
+   * Détermine le fournisseur à partir de l'URL
+   * @param url URL de la vidéo
+   * @returns Nom du fournisseur
+   */
+  getProviderFromUrl(url: string): string {
+    const hostname = new URL(url).hostname.toLowerCase();
 
-/**
- * Crée une source Dailymotion
- */
-function createDailymotionSource(url: string): VideoSource | null {
-  let videoId = '';
-  
-  // Format: https://www.dailymotion.com/video/VIDEO_ID
-  if (url.includes('dailymotion.com/video/')) {
-    videoId = url.split('dailymotion.com/video/')[1].split('?')[0];
-  }
-  
-  // Format: https://dai.ly/VIDEO_ID
-  else if (url.includes('dai.ly/')) {
-    videoId = url.split('dai.ly/')[1].split('?')[0];
-  }
-  
-  if (!videoId) return null;
-  
-  return {
-    id: uuidv4(),
-    provider: 'Dailymotion',
-    embedUrl: `https://www.dailymotion.com/embed/video/${videoId}`,
-    quality: 'Standard',
-    isWorking: true
-  };
-}
+    if (hostname.includes('mail.ru')) return 'Mail.ru';
+    if (hostname.includes('youtube')) return 'YouTube';
+    if (hostname.includes('youtu.be')) return 'YouTube';
+    if (hostname.includes('vimeo')) return 'Vimeo';
+    if (hostname.includes('dailymotion')) return 'Dailymotion';
+    if (hostname.includes('facebook')) return 'Facebook';
+    if (hostname.includes('vk.com')) return 'VK';
+    if (hostname.includes('ok.ru')) return 'Odnoklassniki';
+    if (hostname.includes('streamable')) return 'Streamable';
+    
+    return 'Autre';
+  },
 
-/**
- * Formatte une chaîne contenant plusieurs URL en sources vidéo
- */
-export function formatVideoSourcesFromString(input: string): string {
-  const sources = parseVideoSources(input);
-  return JSON.stringify(sources, null, 2);
-} 
+  /**
+   * Convertit une URL normale en URL d'intégration (iframe)
+   * @param url URL originale
+   * @param provider Fournisseur identifié
+   * @returns URL d'intégration ou null si non supporté
+   */
+  getEmbedUrl(url: string, provider: string): string | null {
+    try {
+      const parsedUrl = new URL(url);
+      
+      switch (provider) {
+        case 'YouTube': {
+          let videoId = '';
+          if (parsedUrl.hostname.includes('youtu.be')) {
+            videoId = parsedUrl.pathname.substring(1);
+          } else {
+            videoId = parsedUrl.searchParams.get('v') || '';
+          }
+          return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+        }
+        
+        case 'Vimeo': {
+          const vimeoId = parsedUrl.pathname.split('/').pop();
+          return vimeoId ? `https://player.vimeo.com/video/${vimeoId}` : null;
+        }
+        
+        case 'Dailymotion': {
+          const match = parsedUrl.pathname.match(/\/video\/([a-zA-Z0-9]+)/);
+          const videoId = match ? match[1] : null;
+          return videoId ? `https://www.dailymotion.com/embed/video/${videoId}` : null;
+        }
+        
+        case 'Facebook': {
+          return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0`;
+        }
+        
+        case 'Mail.ru': {
+          // Pour Mail.ru, l'URL d'embedding est généralement similaire à l'URL de visionnage
+          // mais avec un paramètre embed=1
+          const pathParts = parsedUrl.pathname.split('/');
+          if (pathParts.length >= 4) {
+            // S'assurer que les paramètres nécessaires sont présents
+            // Format /mail/{username}/video/{videoPath}/{videoId}.html
+            return `https://my.mail.ru/video/embed/${pathParts.slice(2).join('/')}`;
+          }
+          return url; // Utiliser l'URL telle quelle si le format n'est pas reconnu
+        }
+        
+        case 'VK': {
+          const videoId = parsedUrl.pathname.split('/').pop();
+          const ownerId = parsedUrl.searchParams.get('ownerId') || parsedUrl.searchParams.get('z').split('video')[1].split('_')[0];
+          const id = parsedUrl.searchParams.get('id') || parsedUrl.searchParams.get('z').split('video')[1].split('_')[1];
+          return videoId ? `https://vk.com/video_ext.php?oid=${ownerId}&id=${id}&hash=${videoId}` : null;
+        }
+        
+        case 'Odnoklassniki': {
+          const videoId = parsedUrl.pathname.split('/').pop();
+          return videoId ? `https://ok.ru/videoembed/${videoId}` : null;
+        }
+        
+        case 'Streamable': {
+          const videoId = parsedUrl.pathname.split('/').pop();
+          return videoId ? `https://streamable.com/e/${videoId}` : null;
+        }
+        
+        default:
+          // Pour les autres, utiliser l'URL directe (peut ne pas fonctionner pour l'intégration)
+          return url;
+      }
+    } catch (error) {
+      console.error('Erreur lors de la génération de l\'URL d\'intégration:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Formater les sources vidéo en chaîne
+   * @param sources Liste des sources vidéo
+   * @returns Chaîne formatée
+   */
+  formatVideoSources(sources: VideoSource[]): string {
+    return sources.map(source => `@${source.embedUrl}`).join('\n');
+  }
+};
+
+export default videoSourceParser; 

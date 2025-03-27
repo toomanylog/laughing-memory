@@ -3,7 +3,7 @@ export interface Content {
   title: string;
   description: string;
   imageUrl: string;
-  type: 'series' | 'movie';
+  type: 'series' | 'movie' | 'anime';
   genre: string[];
   releaseYear: number;
   videoUrl?: string;

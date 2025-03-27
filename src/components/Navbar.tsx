@@ -25,6 +25,7 @@ const Navbar: React.FC = () => {
           <Link to="/" className="hover:text-gray-300">Accueil</Link>
           <Link to="/movies" className="hover:text-gray-300">Films</Link>
           <Link to="/series" className="hover:text-gray-300">Séries</Link>
+          <Link to="/animes" className="hover:text-gray-300">Animés</Link>
           
           {/* Liens pour utilisateurs authentifiés */}
           {currentUser && (
@@ -71,6 +72,7 @@ const Navbar: React.FC = () => {
             <Link to="/" className="hover:text-gray-300 py-2">Accueil</Link>
             <Link to="/movies" className="hover:text-gray-300 py-2">Films</Link>
             <Link to="/series" className="hover:text-gray-300 py-2">Séries</Link>
+            <Link to="/animes" className="hover:text-gray-300 py-2">Animés</Link>
             
             {/* Liens pour utilisateurs authentifiés */}
             {currentUser && (
