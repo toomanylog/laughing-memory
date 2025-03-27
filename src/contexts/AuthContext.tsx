@@ -54,7 +54,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       displayName: user.displayName || '',
       photoURL: user.photoURL || '',
       createdAt: Date.now(),
-      history: []
+      history: [],
+      role: 'user'
     };
 
     await set(ref(db, `users/${user.uid}`), newUser);
