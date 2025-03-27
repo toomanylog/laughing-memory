@@ -157,9 +157,22 @@ export const videoSourceParser = {
         
         case 'VK': {
           const videoId = parsedUrl.pathname.split('/').pop();
-          const ownerId = parsedUrl.searchParams.get('ownerId') || parsedUrl.searchParams.get('z').split('video')[1].split('_')[0];
-          const id = parsedUrl.searchParams.get('id') || parsedUrl.searchParams.get('z').split('video')[1].split('_')[1];
-          return videoId ? `https://vk.com/video_ext.php?oid=${ownerId}&id=${id}&hash=${videoId}` : null;
+          let ownerId = parsedUrl.searchParams.get('ownerId');
+          let id = parsedUrl.searchParams.get('id');
+          
+          // Extraction sécurisée des paramètres z
+          const zParam = parsedUrl.searchParams.get('z');
+          if (!ownerId && zParam && zParam.includes('video')) {
+            const parts = zParam.split('video')[1]?.split('_');
+            if (parts && parts.length > 1) {
+              ownerId = parts[0];
+              id = parts[1];
+            }
+          }
+          
+          return (videoId && ownerId && id) ? 
+            `https://vk.com/video_ext.php?oid=${ownerId}&id=${id}&hash=${videoId}` : 
+            null;
         }
         
         case 'Odnoklassniki': {

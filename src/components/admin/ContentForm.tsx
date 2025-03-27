@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Content, Season, Episode, VideoSource } from '../../types';
-import { parseVideoSources } from '../../utils/videoSourceParser';
+import videoSourceParser from '../../utils/videoSourceParser';
 
 interface ContentFormProps {
   content?: Content;
@@ -17,7 +17,7 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
   const [videoUrl, setVideoUrl] = useState('');
   const [videoSourcesInput, setVideoSourcesInput] = useState('');
   const [videoSources, setVideoSources] = useState<VideoSource[]>([]);
-  const [type, setType] = useState<'movie' | 'series'>('movie');
+  const [type, setType] = useState<'movie' | 'series' | 'anime'>('movie');
   const [releaseYear, setReleaseYear] = useState<number>(new Date().getFullYear());
   const [genre, setGenre] = useState<string[]>([]);
   const [genreInput, setGenreInput] = useState('');
@@ -150,8 +150,8 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
   const handleVideoSourcesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const input = e.target.value;
     setVideoSourcesInput(input);
-    const sources = parseVideoSources(input);
-    setVideoSources(sources);
+    const sources = videoSourceParser.parseVideoSources(input);
+    setVideoSources(sources || []);
   };
   
   // Validation du formulaire
@@ -298,6 +298,16 @@ const ContentForm: React.FC<ContentFormProps> = ({ content, onSubmit, onCancel, 
                 className="h-4 w-4 text-red-600"
               />
               <span className="ml-2">Série</span>
+            </label>
+            <label className="inline-flex items-center">
+              <input
+                type="radio"
+                value="anime"
+                checked={type === 'anime'}
+                onChange={() => setType('anime')}
+                className="h-4 w-4 text-red-600"
+              />
+              <span className="ml-2">Anime</span>
             </label>
           </div>
         </div>
