@@ -32,6 +32,7 @@ const fallbackContent: Content[] = [
       {
         id: 'fallback-season-1',
         number: 1,
+        title: 'Saison 1',
         episodes: [
           {
             id: 'fallback-episode-1',
