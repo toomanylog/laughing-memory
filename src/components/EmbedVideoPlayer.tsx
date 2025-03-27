@@ -253,6 +253,10 @@ const EmbedVideoPlayer: React.FC<EmbedVideoPlayerProps> = ({
             allowFullScreen
             title={`${content.title} player`}
             onLoad={() => saveProgress(0)}
+            frameBorder="0"
+            referrerPolicy="no-referrer"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
+            loading="lazy"
           ></iframe>
         </Box>
       </Paper>
